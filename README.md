@@ -30,7 +30,9 @@ This will specifiy which dataset you want to use, the available datasets are: Fa
 ~~~python
 config.model_name = "GCN"
 ~~~
-This will specifiy which target model you want to use, the available models are: GCN, SAGE, and LPGNN. LPGNN needs more configurations compared to the first two, because its differentially private. To run LPGNN or add your own model, read in [config](config.py) carefully. The default model is GCN.
+This will specifiy which target model you want to use, the available models are: GCN, SAGE, and LPGNN. LPGNN needs more configurations compared to the first two, because its differentially private and has to be cloned or installed first. To run LPGNN, read [it's interface](configurations/models/model_sage.py) and the [config](config.py) carefully. 
+
+To add your own model, read [config](config.py) carefully. The default model is GCN.
 
 ~~~python
 config.random_seed = 32
