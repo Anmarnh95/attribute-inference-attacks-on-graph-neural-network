@@ -14,7 +14,7 @@ class DatasetLoader_Credit(DatasetLoaderInterface):
         self.test = test_split
 
         base_path = Path().parent
-        rel_path = f"../configurations/datasets/Credit"
+        rel_path = f"./configurations/datasets/Credit"
         file_path = (base_path / rel_path).resolve()
         
         # If no train or test split are given (one of them is zero), use public split
@@ -23,6 +23,9 @@ class DatasetLoader_Credit(DatasetLoaderInterface):
             return
     
         self.data = load_credit(path = file_path , sens_attr="Age", predict_attr="NoDefaultNextMonth", train_to_split=(self.train,self.test))
+
+        print(self.data.train_mask.sum())
+        print(self.data.test_mask.sum())
 
 
     def get_data(self):

@@ -60,16 +60,23 @@ class Model_GCN(TargetModelInterface):
                 loss.backward()
                 optimizer.step()
 
+            pred_t = self.wrapped_model(data).argmax(dim=1)
+            correct_t = (pred_t[data.train_mask] == data.y[data.train_mask]).sum()
+            acc_t = int(correct_t) / int(data.train_mask.sum())
+            print(f'Train Accuracy: {acc_t:.4f}')
+
             self.wrapped_model.eval()
             pred = self.wrapped_model(data).argmax(dim=1)
             correct = (pred[data.test_mask] == data.y[data.test_mask]).sum()
             acc = int(correct) / int(data.test_mask.sum())
-            accur = {'Acuracy': acc}
+            print(f'Test Accuracy: {acc:.4f}')
+
+            accur = {"Acuracy_train": acc_t ,"Acuracy_test": acc}
             json = js.dumps(accur)
             f = open(f"{self.save_path}_results/model_metrics_nonprivate_{self.model_name}.json","w")
             f.write(json)
             f.close()
-            print(f'Accuracy: {acc:.4f}')
+
 
 
     def prepare_model(self):

@@ -32,9 +32,15 @@ class DatasetLoader_LastFM(DatasetLoaderInterface):
         transform_train_test =  T.RandomNodeSplit(split="random", num_train_per_class = train_per_class,num_test=test_size, num_val=0)
 
         self.ds.data = transform_train_test(self.ds.data)
+
+        print(self.ds.data.train_mask.sum())
+        print(self.ds.data.test_mask.sum())
         
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
-        rest_train = train_split % self.classes
+        rest_train = (train_split - self.ds.data.train_mask.sum()).item()
+
+        print(rest_train)
+        assert(rest_train >= 0)
         
         indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
         indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
@@ -43,6 +49,10 @@ class DatasetLoader_LastFM(DatasetLoaderInterface):
         new_samples = np.random.choice(choices,rest_train,replace=False)
         
         self.ds.data.train_mask[new_samples] = True
+
+        print(self.ds.data.train_mask.sum())
+        print(self.ds.data.test_mask.sum())
+        
 
     def get_data(self):
         return copy.deepcopy(self.ds.data)

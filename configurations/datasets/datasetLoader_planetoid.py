@@ -29,8 +29,13 @@ class DatasetLoader_Planetoid(DatasetLoaderInterface):
 
         self.ds = Planetoid(root="/tmp/PLANETOID", name=self.ds_name, split="random", num_train_per_class=train_per_class,num_test=test_split,num_val=test_split)
 
+        print(self.ds.data.train_mask.sum())
+        print(self.ds.data.test_mask.sum())
+
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
-        rest_train = train_split % self.classes
+        rest_train = train_split - self.ds.data.train_mask.sum()
+
+        assert(rest_train >= 0)
         
         indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
         indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
@@ -39,6 +44,9 @@ class DatasetLoader_Planetoid(DatasetLoaderInterface):
         new_samples = np.random.choice(choices,rest_train,replace=False)
         
         self.ds.data.train_mask[new_samples] = True
+
+        print(self.ds.data.train_mask.sum())
+        print(self.ds.data.test_mask.sum())
 
 
     def get_data(self):

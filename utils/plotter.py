@@ -5,6 +5,8 @@ from pathlib import Path
 import json as js
 import sys, os
 
+#TODO: Needs improvements!
+
 parent_dir = os.path.abspath('..')
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
@@ -117,7 +119,6 @@ def plot_results(config):
                 if indx_s == -1:
                     raise Exception("Something went wrong")
 
-                #samples = int(key[indx_s + 1:])
                 samples = config.candidate_set_list[0]
                 
                 indx_m = key.find("m")
@@ -134,64 +135,21 @@ def plot_results(config):
 
                 m = int(key[indx_m+1:indx_s]) + binary_sens_attr
 
-                # Some results include full graph
-                # if results_t[key].size()[0] > samples:
-                #     results_t[key] = results_t[key][results_idx[key]]
-                
+
                 sub = torch.sub(results_t[key][:,config.sensetive_attr], dataset_x[results_idx[key]][:,config.sensetive_attr])
 
                 sum_sub = torch.abs(sub).sum().item()
-                #print(sum_sub)
                         
                 distances[key] = (1.0 -  (sum_sub / (samples*m*ratio))) * 100
-                #print(distances[key])
                 if distances[key] > 100:
                     print(distances[key])
                     print(key)
-    else:
+        else:
 
-        loss = torch.nn.MSELoss()
-        file1 = open("showresultsFullNew.txt", "w")
-        for key in res_keys:
-
-            samples = config.candidate_set_list[0]
-            # print(key)
-            # print(dataset_x[results_idx[key]][:,config.sensetive_attr])
-            # print(results_t[key][:,config.sensetive_attr])
-            # Some results include full graph
-            
-            # if results_t[key].size()[0] > samples:
-            #         results_t[key] = results_t[key][results_idx[key]]
-            
-            
-            distances[key] = loss(dataset_x[results_idx[key]][:,config.sensetive_attr],results_t[key][:,config.sensetive_attr]).item()
-            output = f"K={key[4]}:"
-            # if distances[key] > 200:
-            #     file1.writelines(output)
-            #     print(f"\n The total distance: {distances[key]}",file=file1)
-            #     for i in range(samples):
-            #         newloss = loss(dataset_x[results_idx[key]][i,config.sensetive_attr],results_t[key][i,config.sensetive_attr]).item()
-            #         if newloss > 200:
-            #             print(newloss,file=file1)
-            #             print(dataset_x[results_idx[key]][i,config.sensetive_attr],file=file1)
-            #             print(results_t[key][i,config.sensetive_attr],file=file1)
-            #     # file1.writelines(dataset_x[results_idx[key]][:,config.sensetive_attr].numpy())
-            #     # file1.writelines(results_t[key][:,config.sensetive_attr].numpy())
-            #     print(dataset_x[results_idx[key]][:,config.sensetive_attr],file=file1)
-            #     print(results_t[key][:,config.sensetive_attr],file=file1)
-            if key[4] == 'F':
-                file1.writelines(output)
-                print(f"\n The total distance: {distances[key]}",file=file1)
-                for i in range(samples):
-                    newloss = loss(dataset_x[results_idx[key]][i,config.sensetive_attr],results_t[key][i,config.sensetive_attr]).item()
-                    print(newloss,file=file1)
-                    print(dataset_x[results_idx[key]][i,config.sensetive_attr],file=file1)
-                    print(results_t[key][i,config.sensetive_attr],file=file1)
-                # file1.writelines(dataset_x[results_idx[key]][:,config.sensetive_attr].numpy())
-                # file1.writelines(results_t[key][:,config.sensetive_attr].numpy())
-                print(dataset_x[results_idx[key]][:,config.sensetive_attr],file=file1)
-                print(results_t[key][:,config.sensetive_attr],file=file1)
-
+            loss = torch.nn.MSELoss()
+            for key in res_keys:
+                samples = config.candidate_set_list[0]
+                distances[key] = loss(dataset_x[results_idx[key]][:,config.sensetive_attr],results_t[key][:,config.sensetive_attr]).item()
 
     res = {}
     if not config.run_shadow_attack:
@@ -228,7 +186,6 @@ def plot_results(config):
                             res["Attacks"][method][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str]["MEAN"].append(np.mean(temp))
                             res["Attacks"][method][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str]["STD"].append(np.std(temp))
 
-                            #res_std["Attacks"][method][ratio][m][kind][k_new_str].append(np.std(temp))
 
 
 

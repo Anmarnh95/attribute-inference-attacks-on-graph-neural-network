@@ -36,7 +36,7 @@ class DatasetLoader_SNAP(DatasetLoaderInterface):
             train_size = self.number_of_nodes*0.7
         
         if test_split:
-            test_size = train_split
+            test_size = test_split
         else: 
             test_size = self.number_of_nodes*0.3
         
@@ -47,7 +47,9 @@ class DatasetLoader_SNAP(DatasetLoaderInterface):
         self.ds.data = transform_train_test(self.ds.data)
         
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
-        rest_train = train_split % self.classes
+        rest_train = (train_split - self.ds.data.train_mask.sum()).item()
+
+        assert(rest_train >= 0)
         
         indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
         indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
