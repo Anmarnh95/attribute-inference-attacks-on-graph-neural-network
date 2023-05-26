@@ -1,6 +1,6 @@
 # Attribute Inference Attack on Node Classification Tasks
 
-This part holds the code for the experiment of attacking private models with attribute inference attack on node classification tasks. **the code here is still not dynamic enough and still needs improvments and arrangment.**
+This part holds the code for the experiment of attacking private models with attribute inference attack on node classification tasks. 
 
 ## Structure
 * [runner](runner.py): The starting point for the experiment
