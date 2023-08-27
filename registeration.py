@@ -14,6 +14,9 @@ def return_target_model(model_name = "GCN"):
         # WARNING: Please read the comments in configurations.models.model_lpgnn before choosing LPGNN!
         from configurations.models.model_lpgnn import Model_LPGNN
         return Model_LPGNN
+    elif model_name == "MLP":
+         from configurations.models.Model_MLP import Model_MLP
+         return Model_MLP
     else:
         raise("Unknown Target Model: The model chosen is not found. Either the name is wrong or the model is not implemented")
 
@@ -36,5 +39,8 @@ def return_dataset_loader(dataset_name = "Cora"):
     elif dataset_name == "Facebook":
         from configurations.datasets.datasetloader_SNAP import DatasetLoader_SNAP
         return DatasetLoader_SNAP
+    elif dataset_name == "Texas100X":
+        from configurations.datasets.datasetloader_texas100x import DatasetLoader_Texas100X
+        return DatasetLoader_Texas100X
     else:
         raise("Unknown Dataset: The dataset chosen is not found. Either the name is wrong or the model is not implemented")

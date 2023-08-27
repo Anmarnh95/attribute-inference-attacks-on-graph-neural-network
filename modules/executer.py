@@ -11,7 +11,7 @@ from modules.attacker import Attacker
 
 class Executer():
 
-    def __init__(self,model,full_dataset,device='cpu', sensetive_attr = [],perturbation_ratio = 1,run_number = 0,m = 1, candidates = 5, RAA = False, binary = True, threshold = 0.8, fp_iter = 10,save_extention="", round = True, sa_manager = None, min_max_vals=(0,1), idx_unknown= [1], save_path = ""):
+    def __init__(self,model,full_dataset, dataset_name,device='cpu', sensetive_attr = [],perturbation_ratio = 1,run_number = 0,m = 1, candidates = 5, RAA = False, binary = True, threshold = 0.8, fp_iter = 10,save_extention="", round = True, sa_manager = None, min_max_vals=(0,1), idx_unknown= [1], save_path = ""):
         self.sampler = Sampler()
         self.perturber = Perturber()
         self.model = model
@@ -35,7 +35,12 @@ class Executer():
         self.save_path = save_path
         
         # Sample and Petrub
-        self.nodes_ds, self.idx_ds = self.sampler.sample(self.ds,candidates)
+        if dataset_name == "Texas100X":
+            self.idx_ds = np.random.choice(self.ds.candidate_idx2, candidates)
+            self.nodes_ds = self.ds.x[self.idx_ds]
+        else:
+            self.nodes_ds, self.idx_ds = self.sampler.sample(self.ds,candidates)
+            
         self.nodes_petrubed, self.mask = self.perturber.perturb(candidates = self.nodes_ds,m= self.m,RAA=RAA, sensetive_attr=self.sensetive_attr, perturbation_ratio= self.pertubation_ratio)
 
     

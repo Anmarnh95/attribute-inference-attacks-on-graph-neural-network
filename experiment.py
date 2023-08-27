@@ -124,7 +124,24 @@ class Experiment():
                         np.random.seed(seeding_counter)
                         torch.manual_seed(seeding_counter)
                         
-                        exc_SAA = Executer(model=self.model, run_number = run_n, full_dataset=copy.deepcopy(self.data), m=m, candidates=i, RAA=False,  device=self.device, binary=self.config.binary, threshold=self.config.MA_threshold, fp_iter=self.config.fp_iter, save_extention=save_extention,sensetive_attr=self.config.sensetive_attr, round = round_values, perturbation_ratio = ratio, min_max_vals=self.config.min_max_dataset_values,idx_unknown=self.config.sensetive_attr,save_path = self.save_path)
+                        exc_SAA = Executer(model=self.model, 
+                                           run_number = run_n, 
+                                           full_dataset=copy.deepcopy(self.data), 
+                                           m=m, 
+                                           candidates=i,
+                                           RAA=False,
+                                           device=self.device,
+                                           binary=self.config.binary,
+                                           threshold=self.config.MA_threshold,
+                                           fp_iter=self.config.fp_iter,
+                                           save_extention=save_extention,
+                                           sensetive_attr=self.config.sensetive_attr,
+                                           round = round_values,
+                                           perturbation_ratio = ratio,
+                                           min_max_vals=self.config.min_max_dataset_values,
+                                           idx_unknown=self.config.sensetive_attr,
+                                           save_path = self.save_path,
+                                           dataset_name=self.config.dataset_name)
                         print("===============================")
                         exc_SAA.cal_original_cs()
                         print("===============================")
@@ -151,7 +168,21 @@ class Experiment():
                                 exc_SAA.run_attack(method="RIMA",K=k)
 
                         if self.config.RAA:
-                            exc_RAA = Executer(model=self.model, run_number = run_n, full_dataset=copy.deepcopy(self.data), m=m, candidates=i, RAA=True,  device=self.device, binary=self.config.binary, threshold=self.config.MA_threshold, fp_iter=self.config.fp_iter, save_extention=save_extention,sensetive_attr=self.config.sensetive_attr, round = round_values, perturbation_ratio = ratio)
+                            exc_RAA = Executer(model=self.model, 
+                                               run_number = run_n, 
+                                               full_dataset=copy.deepcopy(self.data), 
+                                               m=m, 
+                                               candidates=i, 
+                                               RAA=True,  
+                                               device=self.device, 
+                                               binary=self.config.binary, 
+                                               threshold=self.config.MA_threshold, 
+                                               fp_iter=self.config.fp_iter, 
+                                               save_extention=save_extention,
+                                               sensetive_attr=self.config.sensetive_attr, 
+                                               round = round_values, 
+                                               perturbation_ratio = ratio,
+                                               dataset_name=self.config.dataset_name)
                             print("===============================")
                             exc_RAA.cal_original_cs()
                             print("===============================")
