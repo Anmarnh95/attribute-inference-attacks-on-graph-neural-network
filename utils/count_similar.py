@@ -30,9 +30,19 @@ class Count_Similar():
 
     def count(self):
 
-        count = 0 
+        count = 0
+        count_1 = 0
+        count_0 = 0
+
         for i, edge in enumerate(self.selected_edges):
+            
             if self.ds.x[edge[0]][self.unknown_indx] == self.ds.x[edge[1]][self.unknown_indx]:
                 count += 1
+                if self.ds.x[edge[0]][self.unknown_indx] == 0:
+                    count_0 += 1
+                else:
+                    count_1 += 1
         
-        print(count)
+        print(f"all similar: {count}")
+        print(f"1s: {count_1}")
+        print(f"0s: {count_0}")
