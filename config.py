@@ -109,7 +109,7 @@ define the loader using the interface DatasetLoaderInterface in configurations\d
 Currently, the available datasets are: Facebook, LastFM, Cora, Pubmed, CiteSeer, Credit, Texas100X, Test
 '''
 
-config.dataset_name = "Cora"
+config.dataset_name = "Credit"
 
 # The sensetive attributes are always missing when attacking.
 #config.sensetive_attr = [1,12]
@@ -137,7 +137,7 @@ config.RAA = False
 
 # Training to test split in the form (train/test). Setting either one to zero will indicate that the public split should 
 # be used
-config.split = (100,10)
+config.split = (500,10)
 
 
 # Dectates how many of the candidates set's sensetive attributes are going to be perturbed
@@ -145,7 +145,7 @@ config.perturbation_ratio = [1, 0.5]
 
 # Number of candidates in the candidate set. Experiment run will be repeated for each of the given number of candidates. 
 #config.candidate_set_list = [2]
-config.candidate_set_list = [100]
+config.candidate_set_list = [50]
 
 # Given values for m. The experiment will be repeated for the given values of m. A value of 0.5 is 50% and it is the default value.
 # the parameter m states the amount of attributes which will be made missing. A 100% means that ALL the attributes of a node is made missing.
@@ -166,5 +166,14 @@ config.shadow_model_name = "GCN"
 config.shadow_perturbation_ratio = [0.5]
 
 config.shadow_debug = True
+
+
+#__________________________________________________________________________
+# Counting paris with similar values 
+
+config.count_similarity = True
+
+
+
 
 

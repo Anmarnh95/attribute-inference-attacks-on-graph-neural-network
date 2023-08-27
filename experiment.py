@@ -9,6 +9,7 @@ from modules.executer import Executer
 from utils.dictToString import dictToString
 from modules.shadow_attack import shadow_attack_manager
 from utils.plotter import plot_results
+from utils.count_similar import Count_Similar
 
 class Experiment():
 
@@ -53,6 +54,14 @@ class Experiment():
             print("SUCCESSFULY LOADED A NEW VERSION OF THE DATASET:")
             print(self.data)
             torch.save(self.data,dataset_savepath)
+
+        if self.config.count_similarity:
+            self.counter = Count_Similar(dataset=self.data, 
+                                         split=self.config.split,
+                                         nodes_to_count=self.config.candidate_set_list[0],
+                                         unknown_indx=self.config.sensetive_attr[0])
+            self.counter.count()
+            return
         
         # Prepare private parameters and attack
         privacy_params = list(self.config.privacy_parameters.keys())
