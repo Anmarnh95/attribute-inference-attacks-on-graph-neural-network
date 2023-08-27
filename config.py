@@ -12,7 +12,7 @@ Define the target model using the interface TargetModelInterface in configuratio
 2. In the file, define a class with inherits targetmodelinterface and implements the necessary functions
 3. Add model to Registerations.py in the function return_target_model
 
-Currently, the available target models are: GCN, SAGE.
+Currently, the available target models are: GCN, SAGE, MLP.
 '''
 
 config.model_name = "GCN"
@@ -106,7 +106,7 @@ define the loader using the interface DatasetLoaderInterface in configurations\d
 2. In the file, define a class which inherits datasetloaderinterface and implements the necessary functions
 3. Add the datasets you want to use to registerations.py in the function return_dataset_loader
 
-Currently, the available datasets are: Facebook, LastFM, Cora, Pubmed, CiteSeer, Credit, Test
+Currently, the available datasets are: Facebook, LastFM, Cora, Pubmed, CiteSeer, Credit, Texas100X, Test
 '''
 
 config.dataset_name = "Cora"
@@ -118,7 +118,7 @@ config.dataset_name = "Cora"
 config.sensetive_attr = [1]
 
 # If true, will consider the defined dataset to be binary.
-if config.dataset_name in ['Cora','Facebook','Credit','Test']:
+if config.dataset_name in ['Cora','Facebook','Credit','Texas100X','Test']:
     config.binary = True
 else: 
     config.binary = False
