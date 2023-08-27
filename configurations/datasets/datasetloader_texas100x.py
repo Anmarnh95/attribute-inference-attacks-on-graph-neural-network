@@ -58,7 +58,7 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
 
         features_path = (self.file_path / "texas_100x_features.p").resolve()
         obj = pd.read_pickle(features_path)
-        
+
         df = pd.DataFrame(obj, columns = range(11))
         df = df.drop(df.columns[[0]], axis=1)
         os.mkdir("./edges")
@@ -96,7 +96,7 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
     
     def get_features(self, sampled_nodes):
 
-        features_desc_path = (self.file_path / "texas_100x_feature_desc.pp").resolve()
+        features_desc_path = (self.file_path / "texas_100x_feature_desc.p").resolve()
         obj = pd.read_pickle(features_desc_path)
 
         features_path = (self.file_path / "texas_100x_features.p").resolve()
