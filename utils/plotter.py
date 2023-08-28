@@ -36,7 +36,8 @@ def plot_results(config):
         attack_method.append("BF")
     if config.ri_included:
         attack_method.append("RI")
-
+    if config.fa_included:
+        attack_method.append("FA")
 
     th = config.MA_threshold
     model_name = config.model_name

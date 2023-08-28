@@ -9,7 +9,7 @@ from modules.executer import Executer
 from utils.dictToString import dictToString
 from modules.shadow_attack import shadow_attack_manager
 from utils.plotter import plot_results
-from utils.count_similar import Count_Similar
+from modules.count_similar import Count_Similar
 
 class Experiment():
 
@@ -55,12 +55,23 @@ class Experiment():
             print(self.data)
             torch.save(self.data,dataset_savepath)
 
+        # If we want to count destibutions 
+
         if self.config.count_similarity:
-            self.counter = Count_Similar(dataset=self.data, 
-                                         split=self.config.split,
-                                         nodes_to_count=self.config.candidate_set_list[0],
-                                         unknown_indx=self.config.sensetive_attr[0])
-            self.counter.count()
+            print("===================================================")
+            print("Counting Destributions")
+            for i in range(3):
+
+                random.seed(self.config.random_seed + i)
+                np.random.seed(self.config.random_seed + i)
+                torch.manual_seed(self.config.random_seed+ i)
+
+                self.counter = Count_Similar(dataset=self.data, 
+                                            split= 500,
+                                            nodes_to_count=self.config.candidate_set_list[0],
+                                            unknown_indx=self.config.sensetive_attr[0],
+                                            counter=i)
+                self.counter.count()
             return
         
         # Prepare private parameters and attack
@@ -144,11 +155,10 @@ class Experiment():
                                            threshold=self.config.MA_threshold,
                                            fp_iter=self.config.fp_iter,
                                            save_extention=save_extention,
-                                           sensetive_attr=self.config.sensetive_attr,
+                                           sensetive_attributes=self.config.sensetive_attr,
                                            round = round_values,
                                            perturbation_ratio = ratio,
                                            min_max_vals=self.config.min_max_dataset_values,
-                                           idx_unknown=self.config.sensetive_attr,
                                            save_path = self.save_path,
                                            dataset_name=self.config.dataset_name)
                         print("===============================")
@@ -176,6 +186,10 @@ class Experiment():
                                 print("===============================")
                                 exc_SAA.run_attack(method="RIMA",K=k)
 
+                            if self.config.fa_included:
+                                print("===============================")
+                                exc_SAA.run_attack(method="FA",K=k)
+
                         if self.config.RAA:
                             exc_RAA = Executer(model=self.model, 
                                                run_number = run_n, 
@@ -188,9 +202,11 @@ class Experiment():
                                                threshold=self.config.MA_threshold, 
                                                fp_iter=self.config.fp_iter, 
                                                save_extention=save_extention,
-                                               sensetive_attr=self.config.sensetive_attr, 
+                                               sensetive_attributes=self.config.sensetive_attr, 
                                                round = round_values, 
                                                perturbation_ratio = ratio,
+                                               min_max_vals=self.config.min_max_dataset_values,
+                                               save_path = self.save_path,
                                                dataset_name=self.config.dataset_name)
                             print("===============================")
                             exc_RAA.cal_original_cs()
@@ -215,3 +231,7 @@ class Experiment():
                                 if self.config.rima_included:
                                     print("===============================")
                                     exc_RAA.run_attack(method="RIMA",K=k)
+
+                                if self.config.fa_included:
+                                    print("===============================")
+                                    exc_SAA.run_attack(method="FA",K=k)

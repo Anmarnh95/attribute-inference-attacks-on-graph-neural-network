@@ -83,10 +83,13 @@ config.ma_included = False
 config.fp_included = False
 
 # If true, will run random initializer attack
-config.ri_included = True
+config.ri_included = False
 
-# Ig true, will run MA with random initializer as core instead of FP
+# If true, will run MA with random initializer as core instead of FP
 config.rima_included = False
+
+# If true, will run FA (Flip attack)
+config.fa_included = True
 
 # Iterations of the feature Propagation
 config.fp_iter = 10
@@ -137,7 +140,7 @@ config.RAA = False
 
 # Training to test split in the form (train/test). Setting either one to zero will indicate that the public split should 
 # be used
-config.split = (500,10)
+config.split = (3500,350)
 
 
 # Dectates how many of the candidates set's sensetive attributes are going to be perturbed
@@ -171,7 +174,7 @@ config.shadow_debug = True
 #__________________________________________________________________________
 # Counting paris with similar values 
 
-config.count_similarity = True
+config.count_similarity = False
 
 
 

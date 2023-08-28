@@ -11,7 +11,7 @@ from utils.cs import calculate_confidence_scores
 
 class Attacker():
 
-    def __init__(self, pertubed_nodes=None, mask = None, indexes_of_unknown = None,target_model=None, K = 0, full_access_edge_index=None, device = 'cpu', threshhold = 0.8, binary=True,iter = 10, round = True, min_max_vals= (0,1), idx_unknown = [1]):
+    def __init__(self, pertubed_nodes=None, mask = None, indexes_of_unknown = None,target_model=None, K = 0, full_access_edge_index=None, device = 'cpu', threshhold = 0.8, binary=True,iter = 10, round = True, min_max_vals= (0,1), sensetive_attributes = []):
 
         self.nodes = pertubed_nodes
         self.mask = mask
@@ -24,7 +24,7 @@ class Attacker():
         self.iter = iter
         self.rounding = round
         self.min_max_vals = min_max_vals
-        self.idx_unknown = idx_unknown
+        self.sensetive_attributes = sensetive_attributes
 
         if K == 0:
             self.attack_edges = full_access_edge_index
@@ -120,6 +120,19 @@ class Attacker():
         out , cs = self.random_initialization_with_cs(nodes=self.nodes, mask=self.mask)
         cs_mean = cs.mean()
         return out, cs_mean
+    
+    def run_FA(self):
+        X = self.assign_values(nodes=self.nodes, mask=self.mask).to(device=self.device)
+        cs = self.query_and_eval(x_new=X, edge_matrix=self.attack_edges,indexes_of_unknown=self.indexes_of_unknown)
+        
+        for i, value in enumerate(cs):
+            for attribute in self.sensetive_attributes:
+                if value < self.threshhold:
+                    X[self.indexes_of_unknown[i]][attribute] = 1
+    
+        cs = self.query_and_eval(x_new=X, edge_matrix=self.attack_edges,indexes_of_unknown=self.indexes_of_unknown)
+        cs_mean = cs.mean()
+        return X[self.indexes_of_unknown], cs_mean
 
     def random_initialization_with_cs(self, nodes, mask):
         X = self.assign_values(nodes=nodes, mask=mask).to(device=self.device)
@@ -147,8 +160,8 @@ class Attacker():
             if self.binary:
                 out = (out >= 0.5).float()
             else:
-                out[:,self.idx_unknown][out[:,self.idx_unknown] < self.min_max_vals[0]] = self.min_max_vals[0]
-                out[:,self.idx_unknown][out[:,self.idx_unknown] > self.min_max_vals[1]] = self.min_max_vals[1]
+                out[:,self.sensetive_attributes][out[:,self.sensetive_attributes] < self.min_max_vals[0]] = self.min_max_vals[0]
+                out[:,self.sensetive_attributes][out[:,self.sensetive_attributes] > self.min_max_vals[1]] = self.min_max_vals[1]
 
             if self.rounding:
                 out = torch.round(out)
@@ -180,10 +193,16 @@ class Attacker():
         if self.binary:
             rands = (rands >= 0.5).float()
         else:
-            rands[:,self.idx_unknown][rands[:,self.idx_unknown] < self.min_max_vals[0]] = self.min_max_vals[0]
-            rands[:,self.idx_unknown][rands[:,self.idx_unknown] > self.min_max_vals[1]] = self.min_max_vals[1]
+            rands[:,self.sensetive_attributes][rands[:,self.sensetive_attributes] < self.min_max_vals[0]] = self.min_max_vals[0]
+            rands[:,self.sensetive_attributes][rands[:,self.sensetive_attributes] > self.min_max_vals[1]] = self.min_max_vals[1]
 
         
+        X[mask] = rands[mask]
+        return X
+
+    def assign_zeros(self, nodes, mask):
+        X = copy.deepcopy(nodes)
+        rands = torch.zeros(X.size())
         X[mask] = rands[mask]
         return X
 

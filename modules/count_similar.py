@@ -7,14 +7,31 @@ from torch_geometric.transforms.remove_duplicated_edges import RemoveDuplicatedE
 
 class Count_Similar():
 
-    def __init__(self, dataset: Data, split, nodes_to_count, unknown_indx):
+    def __init__(self, dataset: Data, split, nodes_to_count, unknown_indx, counter):
+
         self.ds = dataset
         self.split = split
         self.nodes_to_count = nodes_to_count
         self.unknown_indx = unknown_indx
 
         indices_train = torch.flatten(torch.nonzero(dataset.train_mask)).numpy()
-        self.choices = np.random.choice(indices_train,size=split[0],replace=False)
+        self.choices = np.random.choice(indices_train,size=split,replace=False)
+        
+        try:
+            last_saved_choices = np.load(f'choices{counter - 1}.npy')
+        except FileNotFoundError:
+            last_saved_choices = None
+        
+        if last_saved_choices is None:
+            print("First Run")
+        elif np.array_equal(np.sort(self.choices), np.sort(last_saved_choices)):
+            print(f"Iteration {counter}: The current choices are the same as the last saved choices.")
+        else:
+            print(f"Iteration {counter}: The current choices are different from the last saved choices.")
+
+        
+        np.save(f'choices{counter}.npy', self.choices)
+
         self.subgraph = dataset.subgraph(torch.tensor(self.choices))
         removaol = RemoveDuplicatedEdges("edge_attr")
         self.subgraph = removaol(self.subgraph)
@@ -27,8 +44,20 @@ class Count_Similar():
 
         random_indices = torch.randperm(unique_edges.size(1))[:self.nodes_to_count]
         self.selected_edges = unique_edges[:, random_indices].t()
+        sorted_selected_edge = torch.sort(self.selected_edges, dim=0)[0]
+
 
     def count(self):
+
+        count_all_0 = 0
+        count_all_1 = 0
+        for node in self.subgraph.x:
+            if node[self.unknown_indx] == 0:
+                count_all_0 += 1
+            else:
+                count_all_1 += 1
+        
+        print(f"In the 500 nodes: {count_all_1} are ones and {count_all_0} are zeros.")
 
         count = 0
         count_1 = 0

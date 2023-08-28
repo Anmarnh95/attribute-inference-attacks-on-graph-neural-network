@@ -1,0 +1,87 @@
+{
+    "Description": "Percentage of correctly inferred attributes of different attackes",
+    "Perturbed Attributes": [
+        1
+    ],
+    "Binary": true,
+    "Attacks": {
+        "FA": {
+            "Perturbation Ratio: 1": {
+                "m: 0": {
+                    "SAA": {
+                        "Full Graph Access": {
+                            "MEAN": [
+                                51.2
+                            ],
+                            "STD": [
+                                5.455272678794345
+                            ]
+                        },
+                        "KNN with K = 2": {
+                            "MEAN": [
+                                46.4
+                            ],
+                            "STD": [
+                                5.571355310873649
+                            ]
+                        },
+                        "KNN with K = 5": {
+                            "MEAN": [
+                                50.6
+                            ],
+                            "STD": [
+                                5.14198405287298
+                            ]
+                        },
+                        "KNN with K = 8": {
+                            "MEAN": [
+                                48.4
+                            ],
+                            "STD": [
+                                6.118823416311341
+                            ]
+                        }
+                    }
+                }
+            },
+            "Perturbation Ratio: 0.5": {
+                "m: 0": {
+                    "SAA": {
+                        "Full Graph Access": {
+                            "MEAN": [
+                                47.6
+                            ],
+                            "STD": [
+                                9.200000000000001
+                            ]
+                        },
+                        "KNN with K = 2": {
+                            "MEAN": [
+                                43.2
+                            ],
+                            "STD": [
+                                10.24499877989256
+                            ]
+                        },
+                        "KNN with K = 5": {
+                            "MEAN": [
+                                48.4
+                            ],
+                            "STD": [
+                                7.472616676907765
+                            ]
+                        },
+                        "KNN with K = 8": {
+                            "MEAN": [
+                                43.6
+                            ],
+                            "STD": [
+                                6.3118935352238
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

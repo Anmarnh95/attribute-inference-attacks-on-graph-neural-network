@@ -11,11 +11,11 @@ from modules.attacker import Attacker
 
 class Executer():
 
-    def __init__(self,model,full_dataset, dataset_name,device='cpu', sensetive_attr = [],perturbation_ratio = 1,run_number = 0,m = 1, candidates = 5, RAA = False, binary = True, threshold = 0.8, fp_iter = 10,save_extention="", round = True, sa_manager = None, min_max_vals=(0,1), idx_unknown= [1], save_path = ""):
+    def __init__(self,model,full_dataset, dataset_name,device='cpu', sensetive_attributes = [], perturbation_ratio = 1,run_number = 0,m = 1, candidates = 5, RAA = False, binary = True, threshold = 0.8, fp_iter = 10,save_extention="", round = True, sa_manager = None, min_max_vals=(0,1), save_path = ""):
         self.sampler = Sampler()
         self.perturber = Perturber()
         self.model = model
-        self.sensetive_attr = sensetive_attr
+        self.sensetive_attributes = sensetive_attributes
         self.ds = copy.deepcopy(full_dataset)
         self.device = device
         self.samples = candidates
@@ -31,7 +31,6 @@ class Executer():
         self.pertubation_ratio = perturbation_ratio
         self.sa_manager = sa_manager
         self.min_max_vals = min_max_vals
-        self.idx_unknown = idx_unknown
         self.save_path = save_path
         
         # Sample and Petrub
@@ -41,7 +40,7 @@ class Executer():
         else:
             self.nodes_ds, self.idx_ds = self.sampler.sample(self.ds,candidates)
             
-        self.nodes_petrubed, self.mask = self.perturber.perturb(candidates = self.nodes_ds,m= self.m,RAA=RAA, sensetive_attr=self.sensetive_attr, perturbation_ratio= self.pertubation_ratio)
+        self.nodes_petrubed, self.mask = self.perturber.perturb(candidates = self.nodes_ds,m= self.m,RAA=RAA, sensetive_attr=self.sensetive_attributes, perturbation_ratio= self.pertubation_ratio)
 
     
     def cal_original_cs(self):
@@ -95,7 +94,7 @@ class Executer():
                             iter = self.fp_iter,
                             round=self.round,
                             min_max_vals = self.min_max_vals,
-                            idx_unknown=self.idx_unknown)
+                            sensetive_attributes=self.sensetive_attributes)
         
         start = time.time()
         if method == "MA":
@@ -108,6 +107,9 @@ class Executer():
             out, mean_cs = attacker.run_RI()
         elif method == "RIMA":
             out, mean_cs = attacker.run_RIMA()
+        elif method == "FA":
+            out, mean_cs = attacker.run_FA()
+
         else:
             raise Exception("Attack method not given or wrong.")
         end = time.time()
