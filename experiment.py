@@ -3,6 +3,7 @@ from itertools import product
 import torch
 import copy
 import random
+from logging import info as l
 
 from registeration import *
 from modules.executer import Executer
@@ -21,56 +22,11 @@ class Experiment():
         random.seed(self.config.random_seed)
         np.random.seed(self.config.random_seed)
         torch.manual_seed(self.config.random_seed)
-        
-        self.save_path = f"{os.getcwd()}/resultsOfRunner{self.config.model_name}{self.config.dataset_name}{self.config.split[0]}"
 
-        if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
-
-        if not os.path.exists(f"{self.save_path}_results"):
-            os.mkdir(f"{self.save_path}_results")
-        
-        print(self.save_path)
-        #os.chdir(self.save_path)
-        print("===============================")
-        print(f"Preparing {self.config.dataset_name} Dataset")
-
-        dataset_savepath = f"{self.save_path}/saved_dataset_{self.config.dataset_name}.pt"
-
-        # Load dataset
-
-        if os.path.exists(dataset_savepath):
-
-            self.data = torch.load(dataset_savepath)
-            print("SUCCESSFULY LOADED AN ALREADY SAVED DATASET:")
-            print(self.data)
-
-        else:
-            self.dataset_loader = return_dataset_loader(dataset_name=self.config.dataset_name)(dataset_name=self.config.dataset_name,
-                                                                                train_split=self.config.split[0],
-                                                                                test_split=self.config.split[1])
-            self.data = self.dataset_loader.get_data()
-            print("SUCCESSFULY LOADED A NEW VERSION OF THE DATASET:")
-            print(self.data)
-            torch.save(self.data,dataset_savepath)
-        
-        # Prepare private parameters and attack
-        privacy_params = list(self.config.privacy_parameters.keys())
-        privacy_params_comninations = list(product(*self.config.privacy_parameters.values()))
-        
-        
-        for privacy_combi in privacy_params_comninations:
-            print("===============================")
-            privacy_combi_dict = dict(zip(privacy_params,privacy_combi))
-
-            if self.config.run_shadow_attack:
-                self.sa_manager = shadow_attack_manager(config=self.config, device=self.device, privacy_params_comninations= privacy_combi_dict)
-                self.sa_manager.prepare_SA_Datasets()
-                self.sa_manager.run_SA()
-            else:
-                self.train_and_attack(privacy_params_comninations = privacy_combi_dict)
-        
-        plot_results(config=self.config)
+        self.prepare_save_path()
+        self.prepare_dataset()
+        self.run_attacks_loop()
+        plot_results(config=self.config, format='%(message)s')
 
         
     def train_and_attack(self,privacy_params_comninations):
@@ -206,3 +162,63 @@ class Experiment():
                                 if self.config.rima_included:
                                     print("===============================")
                                     exc_RAA.run_attack(method="RIMA",K=k)
+
+    def prepare_save_path(self):
+
+        l("==================================================")
+        l(f"Preparing Save Path")
+
+        self.save_path = f"{os.getcwd()}/outputOfExperiment{self.config.model_name}{self.config.dataset_name}{self.config.split[0]}"
+
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+
+        if not os.path.exists(f"{self.save_path}_results"):
+            os.mkdir(f"{self.save_path}_results")
+        
+        l("Output of the experiment will be saved in:")
+        l(self.save_path)
+
+    def prepare_dataset(self):
+
+        l("==================================================")
+        l(f"Preparing {self.config.dataset_name} Dataset")
+
+        dataset_savepath = f"{self.save_path}/saved_dataset_{self.config.dataset_name}.pt"
+
+        if os.path.exists(dataset_savepath):
+
+            self.data = torch.load(dataset_savepath)
+            l("SUCCESSFULY LOADED AN ALREADY SAVED DATASET:")
+            l(self.data)
+
+        else:
+            self.dataset_loader = return_dataset_loader(dataset_name=self.config.dataset_name)(dataset_name=self.config.dataset_name,
+                                                                                train_split=self.config.split[0],
+                                                                                test_split=self.config.split[1])
+            self.data = self.dataset_loader.get_data()
+            l("SUCCESSFULY LOADED A NEW VERSION OF THE DATASET:")
+            l(self.data)
+            torch.save(self.data,dataset_savepath)
+        
+    def run_attacks_loop(self):
+
+        l("==================================================")
+        l("Will Start to run experiment")
+
+        l("Preparing private parameters of the model")
+        # Prepare private parameters and attack
+        privacy_params = list(self.config.privacy_parameters.keys())
+        privacy_params_comninations = list(product(*self.config.privacy_parameters.values()))
+        
+        
+        for privacy_combi in privacy_params_comninations:
+            l("==================================================")
+            privacy_combi_dict = dict(zip(privacy_params,privacy_combi))
+
+            if self.config.run_shadow_attack:
+                self.sa_manager = shadow_attack_manager(config=self.config, device=self.device, privacy_params_comninations= privacy_combi_dict)
+                self.sa_manager.prepare_SA_Datasets()
+                self.sa_manager.run_SA()
+            else:
+                self.train_and_attack(privacy_params_comninations = privacy_combi_dict)

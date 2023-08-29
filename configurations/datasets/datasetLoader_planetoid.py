@@ -3,7 +3,9 @@ from torch_geometric.datasets import Planetoid
 import copy
 import torch
 import numpy as np
-import torch_geometric.transforms as T
+from logging import info as l
+from logging import debug as d
+
 
 class DatasetLoader_Planetoid(DatasetLoaderInterface):
 
@@ -29,24 +31,29 @@ class DatasetLoader_Planetoid(DatasetLoaderInterface):
 
         self.ds = Planetoid(root="/tmp/PLANETOID", name=self.ds_name, split="random", num_train_per_class=train_per_class,num_test=test_split,num_val=test_split)
 
-        print(self.ds.data.train_mask.sum())
-        print(self.ds.data.test_mask.sum())
+        d(f"Number of Training nodes: {self.ds.train_mask.sum()}")
+        d(f"Number of Testing nodes: {self.ds.test_mask.sum()}")
 
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
         rest_train = train_split - self.ds.data.train_mask.sum()
 
         assert(rest_train >= 0)
-        
-        indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
-        indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
 
+        d(f"{rest_train} nodes need to be added to the trainig set to reach the desired {self.train} training nodes")
+
+        
+        indices_train = torch.nonzero((self.ds.train_mask == True), as_tuple=True)[0].numpy()
+        indices_test = torch.nonzero((self.ds.test_mask == True), as_tuple=True)[0].numpy()
+
+        # Choose nodes outisde of the train and test set
         choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
-        new_samples = np.random.choice(choices,rest_train,replace=False)
+        
+        new_samples = np.random.choice(choices,rest_train.item(),replace=False)
         
         self.ds.data.train_mask[new_samples] = True
 
-        print(self.ds.data.train_mask.sum())
-        print(self.ds.data.test_mask.sum())
+        d(f"Number of Training nodes: {self.ds.train_mask.sum()}")
+        d(f"Number of Testing nodes: {self.ds.test_mask.sum()}")
 
 
     def get_data(self):

@@ -1,23 +1,33 @@
 from easydict import EasyDict as edict
 import numpy as np
 from registeration import *
+import logging
 
 config = edict()
 
-'''
-The name of the model used. GraphSAGE or GCN for nonprivate model, LPGNN for private one.
+# sets the desired logging level
+config.log_level = logging.DEBUG
 
-Define the target model using the interface TargetModelInterface in configurations\models. 
-1. Make a new file with the name "model_{modelname}.py in the directory configurations\models"
-2. In the file, define a class with inherits targetmodelinterface and implements the necessary functions
-3. Add model to Registerations.py in the function return_target_model
-
-Currently, the available target models are: GCN, SAGE, MLP.
-'''
-
-config.model_name = "GCN"
-
+# sets the initial random seed
 config.random_seed = 32
+
+#__________________________________________________________________________
+# TARGET MODEL PARAMETERS
+
+# Size of hidden layer in nonprivate model
+config.hidden_size = 10
+
+# Number of training epochs
+config.epochs = 500
+
+# Learning rate of GraphSAGE
+config.lr = 0.01
+
+# Weight Decay of GraphSAGE
+config.wd = 5e-4
+
+# Dropout rate
+config.dropout = 0.5
 
 #__________________________________________________________________________
 # PRIVATE MODEL SETTINGS
@@ -43,25 +53,20 @@ Give an empty dict if you don't require any privacy.
 config.privacy_parameters = {}
 
 #__________________________________________________________________________
-# MODEL PARAMETERS
-
-# Size of hidden layer in nonprivate model
-config.hidden_size = 10
-
-# Number of training epochs
-config.epochs = 500
-
-# Learning rate of GraphSAGE
-config.lr = 0.01
-
-# Weight Decay of GraphSAGE
-config.wd = 5e-4
-
-# Dropout rate
-config.dropout = 0.5
-
-#__________________________________________________________________________
 # Attack SETTINGS
+
+'''
+The name of the model used. GraphSAGE or GCN for nonprivate model, LPGNN for private one.
+
+Define the target model using the interface TargetModelInterface in configurations\models. 
+1. Make a new file with the name "model_{modelname}.py in the directory configurations\models"
+2. In the file, define a class with inherits targetmodelinterface and implements the necessary functions
+3. Add model to Registerations.py in the function return_target_model
+
+Currently, the available target models are: GCN, SAGE, MLP.
+'''
+
+config.model_name = "GCN"
 
 # Confidence score threshold used for MA.
 config.MA_threshold = 0.7
@@ -137,7 +142,7 @@ config.RAA = False
 
 # Training to test split in the form (train/test). Setting either one to zero will indicate that the public split should 
 # be used
-config.split = (100,10)
+config.split = (500,100)
 
 
 # Dectates how many of the candidates set's sensetive attributes are going to be perturbed

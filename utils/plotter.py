@@ -48,8 +48,8 @@ def plot_results(config):
 
     map_l = torch.device('cpu')
     base_path = Path().parent
-    rel_path = f"resultsOfRunner{model_name}{dataset_name}{config.split[0]}/"
-    rel_results_path = f"resultsOfRunner{model_name}{dataset_name}{config.split[0]}_results/"
+    rel_path = f"outputOfExperiment{model_name}{dataset_name}{config.split[0]}/"
+    rel_results_path = f"outputOfExperiment{model_name}{dataset_name}{config.split[0]}_results/"
 
     if not os.path.exists(rel_results_path):
             os.mkdir(rel_results_path)
