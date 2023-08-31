@@ -64,7 +64,7 @@ class Model_SAGE(TargetModelInterface):
             acc = int(correct) / int(data.test_mask.sum())
             accur = {'Acuracy': acc}
             json = js.dumps(accur)
-            f = open(f"{self.save_path}_results/model_metrics_nonprivate_{self.model_name}.json","w")
+            f = open(f"{self.save_path}/model_metrics_nonprivate_{self.model_name}.json","w")
             f.write(json)
             f.close()
             print(f'Accuracy: {acc:.4f}')

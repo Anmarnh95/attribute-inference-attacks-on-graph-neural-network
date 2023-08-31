@@ -19,12 +19,23 @@ class DatasetLoader_SNAP(DatasetLoaderInterface):
 
         self.ds = SNAPDataset(root="/tmp/SNAP", name=ds_key)
 
+        print("Info about facebook:")
+        print(self.ds.data)
+        #removeIsolatedNodes = T.RemoveIsolatedNodes()
+        #self.ds.data = removeIsolatedNodes(self.ds.data)
+
+        addSelfLoops = T.AddSelfLoops()
+        self.ds.data = addSelfLoops(self.ds.data)
+
+        print(self.ds.data)
+
         y = self.ds.data.x[:,0].long()
         x = self.ds.data.x[:,1:]
+        print(self.ds.data)
 
         self.ds.data.y = y
         self.ds.data.x = x
-
+        print(f"Classes: {y.unique()}")
         self.number_of_nodes = self.ds.data.y.size()[0]
         self.classes = len(self.ds.data.y.unique())
 
@@ -47,17 +58,20 @@ class DatasetLoader_SNAP(DatasetLoaderInterface):
         self.ds.data = transform_train_test(self.ds.data)
         
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
-        rest_train = (train_split - self.ds.data.train_mask.sum()).item()
+        rest_train = (train_split - self.ds.data.train_mask.sum())
 
-        assert(rest_train >= 0)
-        
-        indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
-        indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
+        if rest_train > 0:
+            print(rest_train)
+            indices_train = torch.nonzero((self.ds.train_mask == True), as_tuple=True)[0].numpy()
+            print(len(indices_train))
+            indices_test = torch.nonzero((self.ds.test_mask == True), as_tuple=True)[0].numpy()
+            print(len(indices_test))
 
-        choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
-        new_samples = np.random.choice(choices,rest_train,replace=False)
-        
-        self.ds.data.train_mask[new_samples] = True
+            choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
+            print(f"Number of choices: {choices}")
+            new_samples = np.random.choice(choices,rest_train.item(),replace=False)
+            
+            self.ds.data.train_mask[new_samples] = True
 
         print(self.ds.data)
         print(self.ds.data.train_mask.sum())

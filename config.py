@@ -75,7 +75,7 @@ config.MA_threshold = 0.7
 List of variable settings K for attack's KNN runs! For each entry, all specified will attack 10 times for each RAA and SAA.
 If k_list includes 0, attacker will have full graph acces. 
 '''
-config.k_list = [0, 2, 5, 8]
+config.k_list = [2, 5, 8]
 
 # If true, will run BF attack with one missing attribute only.
 # WARNING: bf attack is not yet up to date.. it might not always work..
@@ -142,7 +142,7 @@ config.RAA = False
 
 # Training to test split in the form (train/test). Setting either one to zero will indicate that the public split should 
 # be used
-config.split = (500,100)
+config.split = (2000,200)
 
 
 # Dectates how many of the candidates set's sensetive attributes are going to be perturbed
@@ -150,7 +150,7 @@ config.perturbation_ratio = [1, 0.5]
 
 # Number of candidates in the candidate set. Experiment run will be repeated for each of the given number of candidates. 
 #config.candidate_set_list = [2]
-config.candidate_set_list = [100]
+config.candidate_set_list = [200]
 
 # Given values for m. The experiment will be repeated for the given values of m. A value of 0.5 is 50% and it is the default value.
 # the parameter m states the amount of attributes which will be made missing. A 100% means that ALL the attributes of a node is made missing.
@@ -160,14 +160,18 @@ config.m_list = [0]
 #__________________________________________________________________________
 # Shadow Attack SETTINGS
 
-config.run_shadow_attack = False
+config.run_shadow_attack = True
 
 config.target_to_shadow_rate = 0.5
 
-config.test_rate = 0.5
+# Split for the test set. For example 0.2 means that 20% of the nodes will be used for testing while the rest will be used for training.
+# The test split is for both target and shadow datasets.
+config.test_rate = 0.2
 
+# Model name for the shadow, the target model's name is the chosen from above.
 config.shadow_model_name = "GCN"
 
+# Builds candidate set from the shadow train for peturbation. For example 0.5 means that 50% of the training nodes is peturbed.
 config.shadow_perturbation_ratio = [0.5]
 
 config.shadow_debug = True

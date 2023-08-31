@@ -5,9 +5,12 @@ class MLP(nn.Module):
     def __init__(self, in_features, out_features):
         super(MLP, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
+        self.sigmoid = nn.Sigmoid()  # Adding sigmoid activation function
+
     def forward(self, x):
         out = self.linear(x)
-        return out.round()
+        out = self.sigmoid(out)  # Apply sigmoid
+        return out.round()  # Now this will be either 0 or 1
 
 
 def train_mlp(model,train_loader,device="cpu",epochs=10) -> MLP:
@@ -23,8 +26,11 @@ def train_mlp(model,train_loader,device="cpu",epochs=10) -> MLP:
             x, y = input_data
             x = x.to(device).float()
             y = y.to(device).float()
+            print(x)
+            print(y)
 
             output = model(x)
+            print(output)
             output = output.flatten()
             loss = criterion(output, y)
             loss.backward()
@@ -35,7 +41,8 @@ def train_mlp(model,train_loader,device="cpu",epochs=10) -> MLP:
             if batch_num % 40 == 0:
                 print('\tEpoch %d | Batch %d | Loss %6.2f' % (epoch, batch_num, loss.item()))
         print('Epoch %d | Loss %6.2f' % (epoch, sum(losses)/len(losses)))
-
+        
+    model.eval()
     return model
 
 

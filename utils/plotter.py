@@ -152,6 +152,7 @@ def plot_results(config):
                 distances[key] = loss(dataset_x[results_idx[key]][:,config.sensetive_attr],results_t[key][:,config.sensetive_attr]).item()
 
     res = {}
+
     if not config.run_shadow_attack:
         res["Description"] = "Percentage of correctly inferred attributes of different attackes"
         res["Perturbed Attributes"] = config.sensetive_attr
@@ -193,7 +194,7 @@ def plot_results(config):
 
         results_auc = {}
         knn_list = config.k_list
-        att_kind = True
+        att_kind = False
 
         for number in run_numbers:
             for m in ms:
@@ -215,9 +216,10 @@ def plot_results(config):
 
 
     if config.run_shadow_attack:
+        res["Attacks"] = {}
         res["Attacks"]["SA"] = {}
         res["Attacks"]["SA"]["Description"] = "AUC of shadow attack"
-        for ratio in perturbation_ratio:
+        for ratio in config.shadow_perturbation_ratio:
             res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"] = {}
             for m in ms:
                 res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"] = {}
@@ -237,15 +239,15 @@ def plot_results(config):
                         k_str = f"{k}"
                     k_new_str = f"KNN with K = {k}"
                     
-                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str] = {}
-                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str]["MEAN"] = []
-                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str]["STD"] = []
+                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][attack_kind][k_new_str] = {}
+                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][attack_kind][k_new_str]["MEAN"] = []
+                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][attack_kind][k_new_str]["STD"] = []
 
                     temp = []
                     for j in run_numbers:
                         temp.append(results_auc[f"AUC_SA__{k_str}_{att_kind}__n{j}m{m}s{samples}{ratio}"])
-                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str]["MEAN"].append(np.mean(temp))
-                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][kind][k_new_str]["STD"].append(np.std(temp))
+                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][attack_kind][k_new_str]["MEAN"].append(np.mean(temp))
+                    res["Attacks"]["SA"][f"Perturbation Ratio: {ratio}"][f"m: {m}"][attack_kind][k_new_str]["STD"].append(np.std(temp))
 
 
     with open(f"{rel_results_path}{model_name}{dataset_name}{config.split[0]}_MEAN_{config.sensetive_attr}.json", "w") as fp:

@@ -37,20 +37,18 @@ class DatasetLoader_Planetoid(DatasetLoaderInterface):
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
         rest_train = train_split - self.ds.data.train_mask.sum()
 
-        assert(rest_train >= 0)
+        if rest_train > 0:
+            d(f"{rest_train} nodes need to be added to the trainig set to reach the desired {self.train} training nodes")
+            
+            indices_train = torch.nonzero((self.ds.train_mask == True), as_tuple=True)[0].numpy()
+            indices_test = torch.nonzero((self.ds.test_mask == True), as_tuple=True)[0].numpy()
 
-        d(f"{rest_train} nodes need to be added to the trainig set to reach the desired {self.train} training nodes")
-
-        
-        indices_train = torch.nonzero((self.ds.train_mask == True), as_tuple=True)[0].numpy()
-        indices_test = torch.nonzero((self.ds.test_mask == True), as_tuple=True)[0].numpy()
-
-        # Choose nodes outisde of the train and test set
-        choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
-        
-        new_samples = np.random.choice(choices,rest_train.item(),replace=False)
-        
-        self.ds.data.train_mask[new_samples] = True
+            # Choose nodes outisde of the train and test set
+            choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
+            
+            new_samples = np.random.choice(choices,rest_train.item(),replace=False)
+            
+            self.ds.data.train_mask[new_samples] = True
 
         d(f"Number of Training nodes: {self.ds.train_mask.sum()}")
         d(f"Number of Testing nodes: {self.ds.test_mask.sum()}")

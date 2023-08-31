@@ -1,33 +1,36 @@
-from torch_geometric.nn import knn_graph 
-from torch_geometric.utils import to_dense_adj, dense_to_sparse
-from scipy.sparse.csgraph import laplacian
-from torch_geometric.data import Data
-import torch.nn.functional as F
-import numpy as np
-
-from torch_geometric.utils import subgraph
-from utils.dictToString import dictToString
-import torch_geometric.transforms as T
+from logging import info as l
+from logging import debug as d
 from copy import deepcopy
+
 import os
 import torch
+
+from torch_geometric.nn import knn_graph 
+from torch_geometric.utils import to_dense_adj
+from torch_geometric.utils import subgraph
+
+import torch_geometric.transforms as T
+
+import numpy as np
+
+from scipy.sparse.csgraph import laplacian
+from sklearn import metrics
+
+from utils.dictToString import dictToString
+from utils.mlp import *
+from utils.custom_data import *
+
 from registeration import *
-from utils.mlp import MLP
+
 from modules.sampler import Sampler
 from modules.perturber import Perturber
-
-from torch.utils.data import Dataset, DataLoader
-
-from utils.custom_data import *
-from utils.mlp import *
-
-from sklearn import metrics
+from torch.utils.data import DataLoader
 
 
 
 class shadow_attack_manager():
     
-    def __init__(self,config,device,privacy_params_comninations):
+    def __init__(self,config,device,privacy_params_comninations, save_path = ""):
         self.config = config
         self.device = device
         self.data_target = None
@@ -36,109 +39,7 @@ class shadow_attack_manager():
         self.sampler = Sampler()
         self.perturber = Perturber()
         self.RAA = False
-
-    def prepare_SA_Datasets(self):
-
-        # load data
-
-        dataset_savepath_target = f"saved_dataset_{self.config.dataset_name}_SA_target.pt"
-        dataset_savepath_shadow = f"saved_dataset_{self.config.dataset_name}_SA_shadow.pt"
-
-        # Load and split dataset
-
-        if os.path.exists(dataset_savepath_target) and os.path.exists(dataset_savepath_shadow):
-
-            self.data_target = torch.load(dataset_savepath_target)
-            self.data_shadow = torch.load(dataset_savepath_shadow)
-
-            print("SA: SUCCESSFULY LOADED AN ALREADY SAVED TARGET/SHADOW DATASET:")
-            print(self.data_target)
-            print(self.data_shadow)
-
-        else:
-            dataset_savepath_normal = f"saved_dataset_{self.config.dataset_name}.pt"
-            
-
-            if os.path.exists(dataset_savepath_normal):
-
-                data_normal = torch.load(dataset_savepath_normal)
-                print("SA: SUCCESSFULY LOADED AN ALREADY SAVED NORMAL DATASET:")
-                print(data_normal)
-
-            else:
-                self.dataset_loader = return_dataset_loader(dataset_name=self.config.dataset_name)(dataset_name=self.config.dataset_name,
-                                                                                    train_split=self.config.split[0],
-                                                                                    test_split=self.config.split[1])
-                data_normal = self.dataset_loader.get_data()
-                print("SA: SUCCESSFULY LOADED A NEW VERSION OF THE NORMAL DATASET:")
-                print(data_normal)
-                torch.save(data_normal,dataset_savepath_normal)
-            
-            self.data_target, self.data_shadow = self.split_target_shadow(data_normal=data_normal)
-            torch.save(self.data_target,dataset_savepath_target)
-            torch.save(self.data_shadow,dataset_savepath_shadow)
-
-
-    def split_target_shadow(self, data_normal):
-        
-        rate = self.config.target_to_shadow_rate
-        test_rate = self.config.test_rate
-        total_nodes = data_normal.x.size()[0]
-
-        sub_nodes_target = list(range(int(total_nodes*rate)))
-        sub_nodes_shadow = list(range(int(total_nodes*rate),int(total_nodes)))
-
-        sub_target = subgraph(sub_nodes_target,edge_index=data_normal.edge_index)[0]
-        sub_shadow = subgraph(sub_nodes_shadow,edge_index=data_normal.edge_index)[0]
-        
-        data_target = deepcopy(data_normal)
-        data_target.edge_index = sub_target
-
-        data_shadow = deepcopy(data_normal)
-        data_shadow.edge_index = sub_shadow
-
-        transform_isolated_nodes = T.RemoveIsolatedNodes()
-        transform_train_test =  T.RandomNodeSplit(num_test=int((total_nodes/2)*test_rate), 
-                                                num_val= 0)
-
-        data_target = transform_isolated_nodes(data_target)
-        data_shadow = transform_isolated_nodes(data_shadow)
-
-        data_target = transform_train_test(data_target)
-        data_shadow = transform_train_test(data_shadow)
-
-        return data_target, data_shadow
-    
-    def assign_values(self, nodes, mask):
-        X = deepcopy(nodes)
-        rands = torch.rand(X.size())
-        if self.config.binary:
-            rands = (rands >= 0.5).float()
-        X[mask] = rands[mask]
-        return X
-    
-    def create_edges(self, K, nodes, mask):
-        edge_mat = None
-        
-        new_nodes = self.assign_first(nodes, mask)
-        # Do KNN
-        edge_mat = knn_graph(x=new_nodes,k=K)
-
-        return edge_mat
-    
-    def assign_first(self, nodes, mask):
-        #Only for replacing nands..
-        X = deepcopy(nodes)
-        #rands = torch.rand(X.size())
-        X[mask] = -1
-        return X
-    
-    def get_idx_of_training(self, shadow = True):
-        if shadow:
-            return torch.flatten(torch.nonzero(self.data_shadow.train_mask)).numpy()
-        else: 
-            return torch.flatten(torch.nonzero(self.data_target.train_mask)).numpy()
- 
+        self.save_path = save_path
 
     def run_SA(self):
 
@@ -163,40 +64,89 @@ class shadow_attack_manager():
                                                 sensetive_attr= sensetive_attr)
         else:
             raise("Target and shadow split not yet initiated")
-    
-    def mask_to_idx(self, mask):
-        a = []
-        for i,e in enumerate(mask):
-            if True in e:
-                a.append(i)
-        return a
 
-    def assign_known_values(self,new,original, mask):
-        X = deepcopy(new).to(device = self.device)
-        not_mask = mask == False
-        not_mask = not_mask.to(device = self.device)
-        X[not_mask] = original[not_mask]
-        return X
+    def prepare_SA_Datasets(self):
 
-    
-    def feature_propagation(self, nodes, mask, edges, binary):
+        # load data
 
-        X = self.assign_values(nodes=nodes, mask=mask).to(device=self.device)
+        dataset_savepath_target = f"{self.save_path}/saved_dataset_{self.config.dataset_name}_SA_target.pt"
+        dataset_savepath_shadow = f"{self.save_path}/saved_dataset_{self.config.dataset_name}_SA_shadow.pt"
 
-        edge_mat = edges     
-        A = to_dense_adj(edge_index=edge_mat,max_num_nodes=nodes.size(0)).squeeze().numpy()
-        A = torch.from_numpy(laplacian(A, normed = True))
-        A = A.to(device=self.device)
-        for _ in range(self.config.fp_iter):
-            out = torch.sparse.mm(A,X).to(device=self.device)
-            if binary:
-                out = (out >= 0.5).float()
-            out = self.assign_known_values(new=out,original=nodes.to(device=self.device),mask=mask).to(device=self.device)
-            X = out.to(device=self.device)
+        # Load and split dataset
 
-        return X
-                            
+        if os.path.exists(dataset_savepath_target) and os.path.exists(dataset_savepath_shadow):
+
+            self.data_target = torch.load(dataset_savepath_target)
+            self.data_shadow = torch.load(dataset_savepath_shadow)
+
+            l("SA: SUCCESSFULY LOADED AN ALREADY SAVED TARGET/SHADOW DATASET:")
+            l(self.data_target)
+            l(self.data_shadow)
+
+        else:
+            dataset_savepath_normal = f"{self.save_path}/saved_dataset_{self.config.dataset_name}.pt"
+            
+
+            if os.path.exists(dataset_savepath_normal):
+
+                data_normal = torch.load(dataset_savepath_normal)
+                l("SA: SUCCESSFULY LOADED AN ALREADY SAVED NORMAL DATASET:")
+                l(data_normal)
+
+            else:
+                self.dataset_loader = return_dataset_loader(dataset_name=self.config.dataset_name)(dataset_name=self.config.dataset_name,
+                                                                                    train_split=self.config.split[0],
+                                                                                    test_split=self.config.split[1])
+                data_normal = self.dataset_loader.get_data()
+                l("SA: SUCCESSFULY LOADED A NEW VERSION OF THE NORMAL DATASET:")
+                l(data_normal)
+                torch.save(data_normal,dataset_savepath_normal)
+            
+            self.data_target, self.data_shadow = self.split_target_shadow(data_normal=data_normal)
+            torch.save(self.data_target,dataset_savepath_target)
+            torch.save(self.data_shadow,dataset_savepath_shadow)
+
+    def split_target_shadow(self, data_normal):
+        
+        rate = self.config.target_to_shadow_rate
+        test_rate = self.config.test_rate
+        total_nodes = data_normal.x.size()[0]
+
+        sub_nodes_target = list(range(int(total_nodes*rate)))
+        sub_nodes_shadow = list(range(int(total_nodes*rate),int(total_nodes)))
+
+        sub_target = subgraph(sub_nodes_target,edge_index=deepcopy(data_normal.edge_index))[0]
+        sub_shadow = subgraph(sub_nodes_shadow,edge_index=deepcopy(data_normal.edge_index))[0]
+        
+        data_target = deepcopy(data_normal)
+        data_target.edge_index = sub_target
+
+        data_shadow = deepcopy(data_normal)
+        data_shadow.edge_index = sub_shadow
+
+        transform_isolated_nodes = T.RemoveIsolatedNodes()
+        
+        data_target = transform_isolated_nodes(data_target)
+        data_shadow = transform_isolated_nodes(data_shadow)
+
+        transform_train_test_target =  T.RandomNodeSplit(num_test=int((data_target.x.size()[0])*test_rate), 
+                                                num_val= 0)
+        
+        transform_train_test_shadow =  T.RandomNodeSplit(num_test=int((data_shadow.x.size()[0])*test_rate), 
+                                                num_val= 0)
+
+        data_target = transform_train_test_target(data_target)
+        data_shadow = transform_train_test_shadow(data_shadow)
+
+        return data_target, data_shadow
+           
     def run_one_SA(self, ratio, m, candidates, run_n, k, save_extention,sensetive_attr):
+
+        if not os.path.exists(f"{self.save_path}_results/shadow"):
+            os.mkdir(f"{self.save_path}_results/shadow")
+
+        if not os.path.exists(f"{self.save_path}_results/target"):
+            os.mkdir(f"{self.save_path}_results/target")
         
         # Prepare models
         target_model = return_target_model(self.config.model_name)(data = deepcopy(self.data_target),
@@ -208,7 +158,8 @@ class shadow_attack_manager():
                                          weight_decay=self.config.wd,
                                          device=self.device,
                                          dropout=self.config.dropout,
-                                         private_parameters = self.privacy_params_comninations)
+                                         private_parameters = self.privacy_params_comninations,
+                                         save_path=f"{self.save_path}_results/target")
          
         shadow_model = return_target_model(self.config.shadow_model_name)(data = deepcopy(self.data_shadow),
                                          model_name=self.config.model_name, 
@@ -219,151 +170,123 @@ class shadow_attack_manager():
                                          weight_decay=self.config.wd,
                                          device=self.device,
                                          dropout=self.config.dropout,
-                                         private_parameters = self.privacy_params_comninations)
+                                         private_parameters = self.privacy_params_comninations,
+                                         save_path=f"{self.save_path}_results/shadow")
          
-         # train shadow and target models
-        print("TRAINING TARGET MODEL")
+        # train shadow and target models
+        l("TRAINING TARGET MODEL")
         target_model.prepare_model()
 
-        print("TRAINING SHADOW MODEL")
+        l("TRAINING SHADOW MODEL")
         shadow_model.prepare_model()
 
-        nodes_shadow = self.data_shadow.x
-        idx_shadow = list(range(self.data_shadow.x.size()[0]))
-        nodes_petrubed_shadow, mask_shadow = self.perturber.perturb(candidates = nodes_shadow,
-                                                                m = m,
-                                                                RAA=self.RAA,
-                                                                sensetive_attr=sensetive_attr, 
-                                                                perturbation_ratio= ratio)
+        l(f"Attack: SA, m = {m}, K = {k}, Kind = {self.RAA}, Run Number = {run_n}")
+
+        nodes_shadow = deepcopy(self.data_shadow.x)
+
+        """ 
+        Step 5: Select candidate set with their sensitive attribute from the train_set of the shadow model 
+        """
+        #nodes_no_flip_shadow_idx = torch.randperm(nodes_shadow.size()[0])[:nodes_shadow.size()[0]*(1-ratio)]
+        nodes_no_flip_shadow_idx = torch.randperm(nodes_shadow.size()[0])[:candidates]
         
-        
-        att_kind = self.RAA
-        
-        print(f"Attack: SA,m = {m} ,K = {k}, Kind = {att_kind}, Run Number = {run_n}")
-        
+        """ 
+        Step 6: Select candidate set with their sensitive attribute from the train_set of the shadow model, 
+        where the value of the sensitive attribute is flipped 
+        """
+        all_nodes_idx = torch.arange(0, nodes_shadow.size()[0])
+        remaining_nodes_idx = torch.tensor([i for i in all_nodes_idx if i not in nodes_no_flip_shadow_idx])
+
+        nodes_flip_shadow_idx = remaining_nodes_idx[:candidates]
+
+        nodes_shadow[nodes_flip_shadow_idx,sensetive_attr] = 1 - nodes_shadow[nodes_flip_shadow_idx,sensetive_attr]
+
+        d(nodes_shadow[nodes_no_flip_shadow_idx])
+        d(nodes_shadow[nodes_flip_shadow_idx])
+
         # Prepare KNN if necesary
         if k == 0:
-            attack_edge_index = self.data_shadow.edge_index
+            attack_edge_index_no_flip = knn_graph(x=nodes_shadow[nodes_no_flip_shadow_idx],k=3)
+            attack_edge_index_flip = knn_graph(x=nodes_shadow[nodes_flip_shadow_idx],k=3)
         else:
-            attack_edge_index = self.create_edges(K=k,nodes=nodes_petrubed_shadow, mask=mask_shadow)
+            attack_edge_index_no_flip = knn_graph(x=nodes_shadow[nodes_no_flip_shadow_idx],k=k)
+            attack_edge_index_flip = knn_graph(x=nodes_shadow[nodes_flip_shadow_idx],k=k)
         
-        attack_nodes_with_random_vals = self.assign_values(nodes=nodes_petrubed_shadow, mask=attack_edge_index)
-
-        shadow_out = shadow_model(x=attack_nodes_with_random_vals, edge_index=attack_edge_index)
-
-        mask_idx = self.mask_to_idx(mask_shadow)
-        not_mask_idx = np.setdiff1d(idx_shadow,mask_idx)
-
-        posteriors_0_idx = shadow_out[mask_idx]
-
-        posteriors_1_idx = shadow_out[not_mask_idx]
-
         
+        """ Step 7: Query the shadow model with both candidate sets """
 
-        labels_0 = [0.0]*(posteriors_0_idx.size()[0])
-
-        
-        labels_1 = [1.0]*(posteriors_1_idx.size()[0])
+        posteriors_1 = shadow_model(x=nodes_shadow[nodes_no_flip_shadow_idx], edge_index=attack_edge_index_no_flip)
+        posteriors_0 = shadow_model(x=nodes_shadow[nodes_flip_shadow_idx], edge_index=attack_edge_index_flip)
 
 
-        shadow_posterios = torch.concat((posteriors_0_idx,posteriors_1_idx))
+        """ Step 8: Label not flipped nodes as 1, label flipped nodes as 0"""
+
+        labels_1 = [1.0]*(posteriors_1.size()[0])
+        labels_0 = [0.0]*(posteriors_0.size()[0])
+
+        shadow_posterios = torch.concat((posteriors_0,posteriors_1))
         shadow_labels = labels_0 + labels_1
 
-        if self.config.shadow_debug:
-            print("AFTER MASK:")
-            print(posteriors_0_idx)
-            print(posteriors_1_idx)
-            print(labels_0)
-            print(labels_1)
-            print(shadow_posterios)
-            print(shadow_labels)
+        d("Shadow posterios:")
+        d(shadow_posterios)
+        d("Shadow labels:")
+        d(shadow_labels)
 
-
+        """ Step 9: Train the attack model (MLP) with data from 7 and 9 (make sure they are equal) """
         train_set = TrainDataset(x=shadow_posterios,y=shadow_labels)
 
-        batch_size = candidates
+        batch_size = int(candidates/4)
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
         mlp = MLP(in_features=shadow_posterios.size()[1], out_features=1)
 
         mlp = train_mlp(model=mlp,train_loader=train_loader,device=self.device,epochs=20)
 
-        print("TARGETTTTT::")
+        """" Step 10: Select victim set from the training set of the target dataset (their sensitive value is hidden)"""
+        d("TARGET:")
 
-        nodes_target, idx_target = self.sampler.sample(self.data_target,candidates=candidates)
-        nodes_petrubed_target, mask_target = self.perturber.perturb(candidates = nodes_target,
-                                                                m = m,
-                                                                RAA=self.RAA,
-                                                                sensetive_attr=sensetive_attr, 
-                                                                perturbation_ratio= ratio)
+        #_ , idx_target = self.sampler.sample(self.data_target,candidates=candidates)
+        indices_target_train = torch.flatten(torch.nonzero(self.data_target.train_mask)).numpy()
+        indices_test_train = torch.flatten(torch.nonzero(self.data_target.test_mask)).numpy()
+
+        choices_train = np.random.choice(indices_target_train,size=50,replace=False)
+        choices_test = np.random.choice(indices_test_train,size=50,replace=False)
         
-        if self.config.shadow_debug:
-            print(self.data_target.train_mask)
-            print(nodes_target)
-            print(idx_target)
-            print(nodes_petrubed_target)
-            print(mask_target)
+        target_train_nodes = self.data_target.x[choices_train]
+        target_test_nodes = self.data_target.x[choices_test]
+
+        target_samples = torch.concat((target_train_nodes,target_test_nodes))
+        ground_truth = [1.0]*50 + [0.0]*50
+        d(target_samples.size())
+        #pertubed_target_nodes = deepcopy(self.data_target)
+
+        rands = torch.round(torch.rand(target_samples.size()[0],1))
+        print(rands.size())
+        print(target_samples[:, sensetive_attr].size())
+
+        target_samples[:, sensetive_attr] = rands
+
+        d("Target Info")
+        d(target_samples)
+        d(ground_truth)
 
         if k == 0:
-            file_name_string = f"AUC_SA_{save_extention}_F_{att_kind}__n{run_n}m{m}s{candidates}{ratio}.pt"
-             
-            attack_nodes_target = deepcopy(self.data_target.x)
-            for i, e in enumerate(idx_target):
-                attack_nodes_target[e] = deepcopy(nodes_petrubed_target[i])
-            indx_of_unknown_target = idx_target
-            attack_mask_target = np.isnan(attack_nodes_target).bool()
-            attack_edge_index_target = self.data_target.edge_index
-
+            target_edge_index = knn_graph(x=target_samples,k=3)
         else:
-            file_name_string = f"AUC_SA_{save_extention}_{k}_{att_kind}__n{run_n}m{m}s{candidates}{ratio}.pt"
+            target_edge_index = knn_graph(x=target_samples,k=k)
+    
+        """" Step 11: Query the target model with nodes from victim set, obtain posterior"""
 
-            attack_nodes_target = deepcopy(nodes_petrubed_target)
-            indx_of_unknown_target = [i for i in range(candidates)]
-            attack_mask_target = mask_target
-            attack_edge_index_target = self.create_edges(K=k,nodes=nodes_petrubed_target, mask=mask_target)
-        
-        if self.config.shadow_debug:
-            print("attack_nodes_target")
-            print(attack_nodes_target)
-            print("indx_of_unknown_target")
-            print(indx_of_unknown_target)
-            print("attack_mask_target")
-            print(attack_mask_target)
-        
-        
-        nodes_fp_petrubed_target = self.feature_propagation(nodes=attack_nodes_target,
-                                                            mask=attack_mask_target,
-                                                            edges=attack_edge_index_target,
-                                                            binary=self.config.binary)
+        posteriors_target = target_model(x=target_samples,edge_index=target_edge_index)
         
 
-        
-        posteriors_target = target_model(x=nodes_fp_petrubed_target,edge_index=attack_edge_index_target)[indx_of_unknown_target]
-        
+        """" Step 12: Query your attack model with the posteriors and check the membership."""
         mlp_target_out = mlp(posteriors_target).detach().flatten()
 
-        mask_idx_target = self.mask_to_idx(mask_target)
-
-        ground_truth = [1.0]*candidates
-
-        for i in mask_idx_target:
-            ground_truth[i] = 0.0
-
-
+        """ Step 13: Report the accuracy (this is what we take as the correctly inferred)"""
         auc = metrics.roc_auc_score(ground_truth,mlp_target_out)
+        
+        file_name_string = f"AUC_SA_{save_extention}_{k}_{self.RAA}__n{run_n}m{m}s{candidates}{ratio}.pt"
+        torch.save(auc,f"{self.save_path}/{file_name_string}")
 
-        torch.save(auc,file_name_string)
-
-        if self.config.shadow_debug:
-            print("FP Output")
-            print(nodes_fp_petrubed_target)
-            print("Posterios:")
-            print(posteriors_target)
-            print("mlp_target_out:")
-            print(mlp_target_out)
-            print("mask_idx_target")
-            print(mask_idx_target)
-            print("ground_truth:")
-            print(ground_truth)
-
-        print(f"Final AUC:{auc}")
+        l(f"Final AUC:{auc}")

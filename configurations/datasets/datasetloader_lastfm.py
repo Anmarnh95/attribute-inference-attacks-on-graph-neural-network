@@ -5,6 +5,9 @@ import torch
 import numpy as np
 import torch_geometric.transforms as T
 
+from logging import info as l
+from logging import debug as d
+
 class DatasetLoader_LastFM(DatasetLoaderInterface):
 
     def __init__(self, dataset_name = "LasFM", train_split = 0, test_split = 0):
@@ -26,6 +29,8 @@ class DatasetLoader_LastFM(DatasetLoaderInterface):
             test_size = train_split
         else: 
             test_size = self.number_of_nodes*0.3
+
+        l(f"Train/Test split: {train_split}/{test_split}")
         
         train_per_class = int(train_size/self.classes)
 
@@ -33,25 +38,25 @@ class DatasetLoader_LastFM(DatasetLoaderInterface):
 
         self.ds.data = transform_train_test(self.ds.data)
 
-        print(self.ds.data.train_mask.sum())
-        print(self.ds.data.test_mask.sum())
+        d(f"Number of training nodes {self.ds.data.train_mask.sum()}")
+        d(f"Number of testing nodes {self.ds.data.test_mask.sum()}")
         
         # The number of training nodes in self.ds is not the same as in train_split, the following will complete the number of nodes
         rest_train = (train_split - self.ds.data.train_mask.sum()).item()
 
-        print(rest_train)
-        assert(rest_train >= 0)
-        
-        indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
-        indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
+        d(f"{rest_train} nodes left to complete the desired training set")
 
-        choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
-        new_samples = np.random.choice(choices,rest_train,replace=False)
-        
-        self.ds.data.train_mask[new_samples] = True
+        if rest_train > 0:        
+            indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
+            indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
 
-        print(self.ds.data.train_mask.sum())
-        print(self.ds.data.test_mask.sum())
+            choices = np.setdiff1d(range(self.ds.data.num_nodes),np.union1d(indices_train,indices_test))
+            new_samples = np.random.choice(choices,rest_train,replace=False)
+            
+            self.ds.data.train_mask[new_samples] = True
+
+            d(f"Number of training nodes {self.ds.data.train_mask.sum()}")
+            d(f"Number of testing nodes {self.ds.data.test_mask.sum()}")
         
 
     def get_data(self):

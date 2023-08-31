@@ -73,7 +73,7 @@ class Executer():
             file_name_string = f"{method}_{self.save_extention}_{K}_{att_kind}__n{self.run_n}m{self.m_per}s{self.samples}{self.pertubation_ratio}.pt"
 
             attack_nodes = copy.deepcopy(self.nodes_petrubed)
-            indx_of_unknown = [i for i in range(self.samples)]
+            indx_of_unknown = list(range(self.samples))
             attack_mask = self.mask
 
         print("Attack Nodes")

@@ -4,6 +4,7 @@ import torch
 import copy
 import random
 from logging import info as l
+from logging import debug as d
 
 from registeration import *
 from modules.executer import Executer
@@ -26,7 +27,7 @@ class Experiment():
         self.prepare_save_path()
         self.prepare_dataset()
         self.run_attacks_loop()
-        plot_results(config=self.config, format='%(message)s')
+        plot_results(config=self.config)
 
         
     def train_and_attack(self,privacy_params_comninations):
@@ -46,7 +47,7 @@ class Experiment():
                                         device=self.device,
                                         dropout=self.config.dropout,
                                         private_parameters = privacy_params_comninations,
-                                        save_path = self.save_path)
+                                        save_path = f"{self.save_path}_results")
 
         # Check if model exists, if not, train a new one
         if os.path.exists(model_save_path):
@@ -217,8 +218,9 @@ class Experiment():
             privacy_combi_dict = dict(zip(privacy_params,privacy_combi))
 
             if self.config.run_shadow_attack:
-                self.sa_manager = shadow_attack_manager(config=self.config, device=self.device, privacy_params_comninations= privacy_combi_dict)
+                self.sa_manager = shadow_attack_manager(config=self.config, device=self.device, privacy_params_comninations= privacy_combi_dict, save_path=self.save_path)
                 self.sa_manager.prepare_SA_Datasets()
                 self.sa_manager.run_SA()
+                return
             else:
                 self.train_and_attack(privacy_params_comninations = privacy_combi_dict)
