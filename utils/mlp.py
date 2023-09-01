@@ -1,14 +1,18 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class MLP(nn.Module):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, hidden_features ,out_features):
         super(MLP, self).__init__()
-        self.linear = nn.Linear(in_features, out_features)
+        self.linear1 = nn.Linear(in_features, hidden_features)
+        self.linear2 = nn.Linear(hidden_features, out_features)
         self.sigmoid = nn.Sigmoid()  # Adding sigmoid activation function
 
     def forward(self, x):
-        out = self.linear(x)
+        out = self.linear1(x)
+        out = F.relu(out)
+        out = self.linear2(out)
         out = self.sigmoid(out)  # Apply sigmoid
         return out.round()  # Now this will be either 0 or 1
 
@@ -41,7 +45,7 @@ def train_mlp(model,train_loader,device="cpu",epochs=10) -> MLP:
             if batch_num % 40 == 0:
                 print('\tEpoch %d | Batch %d | Loss %6.2f' % (epoch, batch_num, loss.item()))
         print('Epoch %d | Loss %6.2f' % (epoch, sum(losses)/len(losses)))
-        
+
     model.eval()
     return model
 

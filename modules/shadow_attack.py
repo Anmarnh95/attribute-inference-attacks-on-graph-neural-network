@@ -238,7 +238,7 @@ class shadow_attack_manager():
         batch_size = int(candidates/4)
         train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
-        mlp = MLP(in_features=shadow_posterios.size()[1], out_features=1)
+        mlp = MLP(in_features=shadow_posterios.size()[1], hidden_features=16,out_features=1)
 
         mlp = train_mlp(model=mlp,train_loader=train_loader,device=self.device,epochs=20)
 
