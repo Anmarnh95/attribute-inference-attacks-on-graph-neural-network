@@ -18,6 +18,8 @@ class DatasetLoader_Planetoid(DatasetLoaderInterface):
         if train_split == 0 or test_split == 0:
             self.ds = Planetoid(root="/tmp/PLANETOID", name=self.ds_name, split="public")
             return
+        
+        l(f"Train/Test split: {train_split}/{test_split}")
 
         if dataset_name == "Cora":
             self.classes = 7

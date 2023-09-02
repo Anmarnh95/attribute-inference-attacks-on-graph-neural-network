@@ -2,6 +2,9 @@ import numpy as np
 import copy
 import torch
 
+from logging import info as l
+from logging import debug as d
+
 class Sampler():
 
     def sample_from_all(self, data, num):
@@ -46,15 +49,15 @@ class Sampler():
 
         #indices_train = torch.nonzero((data.train_mask), as_tuple=True)[0].numpy()
         indices_train = torch.flatten(torch.nonzero(data.train_mask)).numpy()
-        print("Sampler: Indices")
-        print(indices_train)
+        d("Sampler: Indices")
+        d(indices_train)
         choices = np.random.choice(indices_train,size=candidates,replace=False)
 
         # mask = torch.zeros(data.x.size()[0], dtype=torch.bool)
         # mask[choices] = True
-        print("SAMPLER:")
-        print(choices)
-        print(data.x[choices])
+        d("SAMPLER:")
+        d(choices)
+        d(data.x[choices])
 
 
         return (data.x[choices],choices)

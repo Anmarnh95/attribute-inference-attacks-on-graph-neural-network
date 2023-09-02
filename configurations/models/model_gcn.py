@@ -6,7 +6,8 @@ from tqdm import tqdm
 from configurations.models.targetmodelinterface import TargetModelInterface
 from torch_geometric.data import Data
 import json as js
-
+from logging import info as l
+from logging import debug as d
 
 class GCN(torch.nn.Module):
     def __init__(self,num_features,num_classes, hidden_layer = 16, dropout = 0.5):
@@ -46,11 +47,11 @@ class Model_GCN(TargetModelInterface):
             np.random.seed(42)
             torch.manual_seed(42)
 
-            print(f"TRAINING NONPRIVATE {self.model_name} MODEL")
+            l(f"TRAINING NONPRIVATE {self.model_name} MODEL")
             optimizer = torch.optim.Adam(self.wrapped_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
             data = self.data
             
-            print(self.wrapped_model)
+            l(self.wrapped_model)
 
             self.wrapped_model.train()
             for _ in tqdm(range(self.epochs)):
@@ -63,13 +64,13 @@ class Model_GCN(TargetModelInterface):
             pred_t = self.wrapped_model(data).argmax(dim=1)
             correct_t = (pred_t[data.train_mask] == data.y[data.train_mask]).sum()
             acc_t = int(correct_t) / int(data.train_mask.sum())
-            print(f'Train Accuracy: {acc_t:.4f}')
+            l(f'Train Accuracy: {acc_t:.4f}')
 
             self.wrapped_model.eval()
             pred = self.wrapped_model(data).argmax(dim=1)
             correct = (pred[data.test_mask] == data.y[data.test_mask]).sum()
             acc = int(correct) / int(data.test_mask.sum())
-            print(f'Test Accuracy: {acc:.4f}')
+            l(f'Test Accuracy: {acc:.4f}')
 
             accur = {"Acuracy_train": acc_t ,"Acuracy_test": acc}
             json = js.dumps(accur)
@@ -93,7 +94,7 @@ class Model_GCN(TargetModelInterface):
         pred = F.softmax(model(data_t.x,data_t.adj_t),dim=1).argmax(dim=1)
         correct = (pred[data_t.test_mask] == data_t.y[data_t.test_mask]).sum()
         acc = int(correct) / int(data_t.test_mask.sum())
-        print(f'Accuracy: {acc:.4f}')
+        l(f'Accuracy: {acc:.4f}')
 
     def state_dict(self):
         return self.wrapped_model.state_dict()

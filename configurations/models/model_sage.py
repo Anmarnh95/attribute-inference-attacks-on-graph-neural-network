@@ -7,7 +7,8 @@ from tqdm import tqdm
 from configurations.models.targetmodelinterface import TargetModelInterface
 from torch_geometric.data import Data
 import json as js
-
+from logging import info as l
+from logging import debug as d
 
 class SAGE(torch.nn.Module):
     def __init__(self,num_features,num_classes, hidden_layer = 16, dropout = 0.5):
@@ -44,11 +45,11 @@ class Model_SAGE(TargetModelInterface):
 
     def train_model(self):
 
-            print(f"TRAINING NONPRIVATE {self.model_name} MODEL")
+            l(f"TRAINING NONPRIVATE {self.model_name} MODEL")
             optimizer = torch.optim.Adam(self.wrapped_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
             data = self.data
             
-            print(self.wrapped_model)
+            l(self.wrapped_model)
 
             self.wrapped_model.train()
             for _ in tqdm(range(self.epochs)):
@@ -67,7 +68,7 @@ class Model_SAGE(TargetModelInterface):
             f = open(f"{self.save_path}/model_metrics_nonprivate_{self.model_name}.json","w")
             f.write(json)
             f.close()
-            print(f'Accuracy: {acc:.4f}')
+            l(f'Accuracy: {acc:.4f}')
     
     def prepare_model(self):
             self.train_model()
@@ -83,7 +84,7 @@ class Model_SAGE(TargetModelInterface):
         pred = F.softmax(model(data_t.x,data_t.adj_t),dim=1).argmax(dim=1)
         correct = (pred[data_t.test_mask] == data_t.y[data_t.test_mask]).sum()
         acc = int(correct) / int(data_t.test_mask.sum())
-        print(f'Accuracy: {acc:.4f}')
+        l(f'Accuracy: {acc:.4f}')
 
     def state_dict(self):
         return self.wrapped_model.state_dict()

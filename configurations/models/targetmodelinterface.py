@@ -1,3 +1,6 @@
+"""
+Abstract class for a Model. Implement this so your model can be used in the experiment. 
+"""
 import torch
 from torch_geometric.data import Data
 
@@ -10,9 +13,15 @@ class TargetModelInterface:
     def __call__(self, x, edge_index):
         return self.query_model(x, edge_index)
     
+    """
+    Should be called to train the model.
+    """
     def prepare_model(self):
         pass
 
+    """
+    Should be called to query a model.
+    """
     def query_model(self, x: torch.tensor, edge_index:  torch.tensor):
         pass
     

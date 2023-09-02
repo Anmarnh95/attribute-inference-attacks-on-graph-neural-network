@@ -8,6 +8,8 @@ import torch
 from random import sample
 from copy import deepcopy
 from pathlib import Path
+from logging import info as l
+from logging import debug as d
 
 class CustomDataset():
     def __init__(self, x, y, x_test, y_test, num_classes, num_features):
@@ -68,7 +70,7 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
         
         edges = 0
         for i in range((len(df) // 500)):
-            print(i)
+            l(i)
             mat_norm2 = mat_norm1[500*i:500*(i+1),:]
             sims = mat_norm1 @ mat_norm2.transpose()
     
@@ -87,12 +89,12 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
                 np.savetxt("edges/foo" + str(i+1) + ".csv", sims, delimiter=",")
         
         end = time.time()
-        print(end - start)
+        d(end - start)
         nodes = len(df)
         edges = (edges - nodes)/2
-        print("total nodes: " + str(nodes))
-        print("total edges: " + str(edges))
-        print("average node degree: " + str(edges*2 / nodes))
+        d("total nodes: " + str(nodes))
+        d("total edges: " + str(edges))
+        d("average node degree: " + str(edges*2 / nodes))
     
     def get_features(self, sampled_nodes):
 
@@ -110,11 +112,11 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
         obj[2][9] = 1
 
         del obj[0]["TOTAL_CHARGES"]
-        print(feats.columns[[7]])
+        d(feats.columns[[7]])
         feats = feats.drop(feats.columns[[7]], axis=1) # drop correlated feature
         feats = feats.drop(feats.columns[[0]], axis=1) # drop uninformative feature
         feats = self.process_features(feats, obj[0], obj[2])
-        print(feats)
+        d(feats)
         
         return np.array(feats)
         
@@ -129,7 +131,7 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
             for col in attribute_dict:
                 # skip in case the sensitive feature was removed above
                 if col not in features.columns:
-                    print(col)
+                    d(col)
                     continue
                 # to expand the non-binary categorical features
                 if max_attr_vals[attribute_dict[col]] != 1:
@@ -206,7 +208,7 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
         num_classes = 100
         labels = torch.from_numpy(labels)
         
-        print("num nodes: " + str(len(labels)))
+        d("num nodes: " + str(len(labels)))
         
         graph = Data(x = features, edge_index = edges, y = labels.squeeze(1))
 
@@ -221,7 +223,7 @@ class DatasetLoader_Texas100X(DatasetLoaderInterface):
         graph.num_train = train_nodes
         graph.num_test = model_size - train_nodes
             
-        print("ann")
+        d("ann")
 
         return (features, labels, ([i for i in range(len(model_train_idx))], [i + len(model_train_idx) for i in range(len(model_test_idx))]), 
                 [i + model_size for i in range(candidate_size)], [i + model_size + candidate_size for i in range(candidate_size)], 

@@ -3,6 +3,7 @@ from torch_geometric.data import Data
 import torch
 from torch_geometric.nn import knn_graph
 import numpy as np
+from logging import debug as d
 
 
 def load_testdataset(train = 5, test = 2):
@@ -49,18 +50,18 @@ class DatasetLoader_TestDataset(DatasetLoaderInterface):
             return
     
         self.data = load_testdataset(train = train_split, test = test_split)
-        print("Dataset:")
-        print(self.data)
-        print("x:")
-        print(self.data.x)
-        print("y:")
-        print(self.data.y)
-        print("edges:")
-        print(self.data.edge_index)
-        print("train mask")
-        print(self.data.train_mask)
-        print("test mask")
-        print(self.data.test_mask)
+        d("Dataset:")
+        d(self.data)
+        d("x:")
+        d(self.data.x)
+        d("y:")
+        d(self.data.y)
+        d("edges:")
+        d(self.data.edge_index)
+        d("train mask")
+        d(self.data.train_mask)
+        d("test mask")
+        d(self.data.test_mask)
 
     def get_data(self):
         return self.data

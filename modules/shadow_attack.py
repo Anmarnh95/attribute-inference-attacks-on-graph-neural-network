@@ -261,8 +261,8 @@ class shadow_attack_manager():
         #pertubed_target_nodes = deepcopy(self.data_target)
 
         rands = torch.round(torch.rand(target_samples.size()[0],1))
-        print(rands.size())
-        print(target_samples[:, sensetive_attr].size())
+        d(rands.size())
+        d(target_samples[:, sensetive_attr].size())
 
         target_samples[:, sensetive_attr] = rands
 

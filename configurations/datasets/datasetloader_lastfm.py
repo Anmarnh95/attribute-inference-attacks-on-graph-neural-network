@@ -46,7 +46,9 @@ class DatasetLoader_LastFM(DatasetLoaderInterface):
 
         d(f"{rest_train} nodes left to complete the desired training set")
 
-        if rest_train > 0:        
+        if rest_train > 0:
+
+            d(f"{rest_train} nodes need to be added to the trainig set to reach the desired {self.train} training nodes")
             indices_train = torch.nonzero((self.ds.data.train_mask == True), as_tuple=True)[0].numpy()
             indices_test = torch.nonzero((self.ds.data.test_mask == True), as_tuple=True)[0].numpy()
 

@@ -9,6 +9,9 @@ from modules.perturber import Perturber
 from utils.cs import calculate_confidence_scores
 from modules.attacker import Attacker
 
+from logging import info as l
+from logging import debug as d
+
 class Executer():
 
     def __init__(self,model,full_dataset, dataset_name,device='cpu', sensetive_attr = [],perturbation_ratio = 1,run_number = 0,m = 1, candidates = 5, RAA = False, binary = True, threshold = 0.8, fp_iter = 10,save_extention="", round = True, sa_manager = None, min_max_vals=(0,1), idx_unknown= [1], save_path = ""):
@@ -50,19 +53,19 @@ class Executer():
         Y = self.model(self.ds.x, self.ds.edge_index)
         Y = Y[self.idx_ds]
         cs_mean = calculate_confidence_scores(Y=Y).mean()
-        print(f"CS of original values in RAA {self.RAA} is: {cs_mean}")
+        l(f"CS of original values in RAA {self.RAA} is: {cs_mean}")
         torch.save(cs_mean,file_name_cs)
 
-    def run_attack(self, method = "MA", K = 2):
+    def run_attack(self, attack_method = "MA", K = 2):
 
         att_kind = "RAA" if self.RAA else "SAA"
-        print(f"Attack: {method},m = {self.m_per} ,K = {K}, Kind = {att_kind}, Run Number = {self.run_n}")
+        l(f"Attack: {attack_method},m = {self.m_per} ,K = {K}, Kind = {att_kind}, Run Number = {self.run_n}")
         
         attack_nodes = None
         indx_of_unknown = []
         attack_mask = None
         if K == 0:
-            file_name_string = f"{method}_{self.save_extention}_F_{att_kind}__n{self.run_n}m{self.m_per}s{self.samples}{self.pertubation_ratio}.pt"
+            file_name_string = f"{attack_method}_{self.save_extention}_F_{att_kind}__n{self.run_n}m{self.m_per}s{self.samples}{self.pertubation_ratio}.pt"
             
             attack_nodes = copy.deepcopy(self.ds.x)
             for i, e in enumerate(self.idx_ds):
@@ -70,18 +73,20 @@ class Executer():
             indx_of_unknown = self.idx_ds
             attack_mask = np.isnan(attack_nodes).bool()
         else:
-            file_name_string = f"{method}_{self.save_extention}_{K}_{att_kind}__n{self.run_n}m{self.m_per}s{self.samples}{self.pertubation_ratio}.pt"
+            file_name_string = f"{attack_method}_{self.save_extention}_{K}_{att_kind}__n{self.run_n}m{self.m_per}s{self.samples}{self.pertubation_ratio}.pt"
 
             attack_nodes = copy.deepcopy(self.nodes_petrubed)
             indx_of_unknown = list(range(self.samples))
             attack_mask = self.mask
 
-        print("Attack Nodes")
-        print(attack_nodes)
-        print("Attack Mask:")
-        print(attack_mask)
-        print("indx_of_unknown:")
-        print(indx_of_unknown)
+        d("Attack Nodes")
+        d(attack_nodes)
+        d("Attack Mask:")
+        d(attack_mask)
+        d("indx_of_unknown:")
+        d(indx_of_unknown)
+
+        l(f"Attack {method} will start")
 
         attacker = Attacker(pertubed_nodes=attack_nodes,
                             mask=attack_mask,
@@ -97,31 +102,34 @@ class Executer():
                             min_max_vals = self.min_max_vals,
                             idx_unknown=self.idx_unknown)
         
+        l(f"Attack  {attack_method} in progress")
         start = time.time()
-        if method == "MA":
+        if attack_method == "MA":
             out, mean_cs = attacker.run_MA()
-        elif method == "FP":
+        elif attack_method == "FP":
             out, mean_cs = attacker.run_FP()
-        elif method == "BF":
+        elif attack_method == "BF":
             out, mean_cs = attacker.run_BF()
-        elif method == "RI":
+        elif attack_method == "RI":
             out, mean_cs = attacker.run_RI()
-        elif method == "RIMA":
+        elif attack_method == "RIMA":
             out, mean_cs = attacker.run_RIMA()
         else:
             raise Exception("Attack method not given or wrong.")
         end = time.time()
 
-
+        
         timestamp = float(format(end - start))
-        print(f"Output of {method}:{out}")
-        print(f"Mean Confidence of {method}: {mean_cs}")
-        print(f"Indexes in Dataset of {method}: {self.idx_ds}")
+
+        l(f"Attack {attack_method} is over")
+        d(f"Output of {attack_method}:{out}")
+        l(f"Mean Confidence of {attack_method}: {mean_cs}")
+        d(f"Indexes in Dataset of {attack_method}: {self.idx_ds}")
         
         # Save results
         torch.save(out,f"{self.save_path}/results__{file_name_string}")
         torch.save(mean_cs,f"{self.save_path}/cs__{file_name_string}")
         torch.save(self.idx_ds,f"{self.save_path}/idx__{file_name_string}")
         ts = torch.tensor([timestamp])
-        print(f"Timestamp of {method}: {ts}")
+        l(f"Timestamp of {attack_method}: {ts}")
         torch.save(ts, f"{self.save_path}/ts__{file_name_string}")

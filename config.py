@@ -114,7 +114,7 @@ define the loader using the interface DatasetLoaderInterface in configurations\d
 Currently, the available datasets are: Facebook, LastFM, Cora, Pubmed, CiteSeer, Credit, Texas100X, Test
 '''
 
-config.dataset_name = "Cora"
+config.dataset_name = "Facebook"
 
 # The sensetive attributes are always missing when attacking.
 #config.sensetive_attr = [1,12]

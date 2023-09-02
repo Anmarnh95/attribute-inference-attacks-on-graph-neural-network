@@ -5,6 +5,9 @@ from pathlib import Path
 import json as js
 import sys, os
 
+from logging import info as l
+from logging import debug as d
+
 #TODO: Needs improvements!
 
 parent_dir = os.path.abspath('..')
@@ -25,7 +28,7 @@ def plot_results(config):
 
     dataset_savepath = f"saved_dataset_{config.dataset_name}.pt"
 
-    print(config.split[0])
+    d(config.split[0])
     if config.fp_included:
         attack_method.append("FP")
     if config.ma_included:
@@ -142,8 +145,8 @@ def plot_results(config):
                         
                 distances[key] = (1.0 -  (sum_sub / (samples*m*ratio))) * 100
                 if distances[key] > 100:
-                    print(distances[key])
-                    print(key)
+                    d(distances[key])
+                    d(key)
         else:
 
             loss = torch.nn.MSELoss()
@@ -211,7 +214,7 @@ def plot_results(config):
                             file_path = (base_path / rel_path / f"{key}.pt").resolve()
                             results_auc[key] = torch.load(f"{file_path}",map_location=map_l)
         
-        print(results_auc.keys())
+        d(results_auc.keys())
 
 
 

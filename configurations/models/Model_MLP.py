@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch_geometric.data import Data
 from torch.utils.data import DataLoader
+from logging import info as l
+from logging import debug as d
 
 from tqdm import tqdm
 
@@ -85,7 +87,7 @@ class Model_MLP():
             self.train_model()
 
     def query_model(self, x, edge_index):
-        print(edge_index)
+        d(edge_index)
         if self.model_name == "GraphSAGE" or self.model_name == "GCN":
             query_data = Data(x=x.type(torch.float).to(device=self.device),edge_index=edge_index.to(device=self.device)).to(self.device)
             return torch.exp(self.wrapped_model(query_data))
@@ -98,7 +100,7 @@ class Model_MLP():
         np.random.seed(42)
         torch.manual_seed(42)
 
-        print(f"TRAINING NONPRIVATE {self.model_name} MODEL")
+        l(f"TRAINING NONPRIVATE {self.model_name} MODEL")
         wrapped_model = self.wrapped_model.to(self.device)
         train_x = self.data.x[:self.data.num_train].to(self.device)
         train_y = self.data.y[:self.data.num_train].to(self.device)
@@ -110,7 +112,7 @@ class Model_MLP():
         wrapped_model.train()
         for _ in tqdm(range(self.epochs)):
             out = wrapped_model(train_x)
-            print(F.nll_loss(out, train_y))
+            d(F.nll_loss(out, train_y))
             for x, y in self.train_loader:
                 optimizer.zero_grad()
                 out = wrapped_model(x)
@@ -125,7 +127,7 @@ class Model_MLP():
         pred_train = wrapped_model(train_x).argmax(dim=1)
         correct_train = (pred_train == train_y).sum()
         acc_train = int(correct_train) / len(train_y)
-        print(f'Train accuracy: {acc_train:.4f}')
+        l(f'Train accuracy: {acc_train:.4f}')
         
         #ACCURACY ON TEST SET
         pred_test = wrapped_model(test_x).argmax(dim=1)

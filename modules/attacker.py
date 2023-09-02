@@ -2,12 +2,15 @@ import torch
 import numpy as np
 import copy
 from torch_geometric.nn import knn_graph 
-from torch_geometric.utils import to_dense_adj, dense_to_sparse
+from torch_geometric.utils import to_dense_adj
 from scipy.sparse.csgraph import laplacian
 from torch_geometric.data import Data
 import torch.nn.functional as F
 
 from utils.cs import calculate_confidence_scores
+
+from logging import info as l
+from logging import debug as d
 
 class Attacker():
 
@@ -42,8 +45,8 @@ class Attacker():
             x_new, cs= self.feature_propagation_with_cs(nodes=X,mask=mask)
             
             top_scores = cs.topk(cs.size(0))
-            print(top_scores)
-            print(fixed)
+            d(top_scores)
+            d(fixed)
             for i in range(cs.size(0)):
                 index = (top_scores[1][i]).item()
                 val = (top_scores[0][i]).item()
@@ -71,8 +74,8 @@ class Attacker():
             x_new, cs = self.random_initialization_with_cs(nodes=X,mask=mask)
     
             top_scores = cs.topk(cs.size(0))
-            print(top_scores)
-            print(fixed)
+            d(top_scores)
+            d(fixed)
             for i in range(cs.size(0)):
                 index = (top_scores[1][i]).item()
                 val = (top_scores[0][i]).item()

@@ -52,11 +52,11 @@ class Experiment():
         # Check if model exists, if not, train a new one
         if os.path.exists(model_save_path):
             self.model.load_state_dict(torch.load(model_save_path))
-            print(f"SUCCESSFULY LOADED AN ALREADY SAVED VERSION OF THE MODEL {self.config.model_name}")
+            l(f"SUCCESSFULY LOADED AN ALREADY SAVED VERSION OF THE MODEL {self.config.model_name}")
             
         else:
             self.model.prepare_model()
-            print(f"SUCCESSFULY TRAINED AND SAVED A NEW VERSION OF THE MODEL {self.config.model_name}")
+            l(f"SUCCESSFULY TRAINED AND SAVED A NEW VERSION OF THE MODEL {self.config.model_name}")
             
             torch.save(self.model.state_dict(), model_save_path)
 
@@ -67,10 +67,10 @@ class Experiment():
         round_values = self.config.round
 
         save_extention = dictToString(privacy_params_comninations)
-        print(save_extention)
+        l(save_extention)
 
         seeding_counter = self.config.random_seed
-        print("===============================")
+        l("===============================")
         for ratio in self.config.perturbation_ratio:
             for m in ms:
                 for i in candidates_set_list:
@@ -99,30 +99,30 @@ class Experiment():
                                            idx_unknown=self.config.sensetive_attr,
                                            save_path = self.save_path,
                                            dataset_name=self.config.dataset_name)
-                        print("===============================")
+                        l("===============================")
                         exc_SAA.cal_original_cs()
-                        print("===============================")
+                        l("===============================")
 
                         for k in k_list:
                             if self.config.ma_included:
-                                print("===============================")
-                                exc_SAA.run_attack(method="MA",K=k)
+                                l("===============================")
+                                exc_SAA.run_attack(attack_method="MA",K=k)
 
                             if self.config.fp_included:
-                                print("===============================")
-                                exc_SAA.run_attack(method="FP",K=k)
+                                l("===============================")
+                                exc_SAA.run_attack(attack_method="FP",K=k)
 
                             if self.config.bf_included:
-                                print("===============================")
-                                exc_SAA.run_attack(method="BF",K=k)
+                                l("===============================")
+                                exc_SAA.run_attack(attack_method="BF",K=k)
 
                             if self.config.ri_included:
-                                print("===============================")
-                                exc_SAA.run_attack(method="RI",K=k)
+                                l("===============================")
+                                exc_SAA.run_attack(attack_method="RI",K=k)
 
                             if self.config.rima_included:
-                                print("===============================")
-                                exc_SAA.run_attack(method="RIMA",K=k)
+                                l("===============================")
+                                exc_SAA.run_attack(attack_method="RIMA",K=k)
 
                         if self.config.RAA:
                             exc_RAA = Executer(model=self.model, 
@@ -140,29 +140,29 @@ class Experiment():
                                                round = round_values, 
                                                perturbation_ratio = ratio,
                                                dataset_name=self.config.dataset_name)
-                            print("===============================")
+                            l("===============================")
                             exc_RAA.cal_original_cs()
-                            print("===============================")
+                            l("===============================")
                             for k in k_list:
                                 if self.config.ma_included:
-                                    print("===============================")
-                                    exc_RAA.run_attack(method="MA",K=k)
+                                    l("===============================")
+                                    exc_RAA.run_attack(attack_method="MA",K=k)
 
                                 if self.config.fp_included:
-                                    print("===============================")
-                                    exc_RAA.run_attack(method="FP",K=k)
+                                    l("===============================")
+                                    exc_RAA.run_attack(attack_method="FP",K=k)
 
                                 if self.config.bf_included:
-                                    print("===============================")
-                                    exc_RAA.run_attack(method="BF",K=k)
+                                    l("===============================")
+                                    exc_RAA.run_attack(attack_method="BF",K=k)
 
                                 if self.config.ri_included:
-                                    print("===============================")
-                                    exc_RAA.run_attack(method="RI",K=k)
+                                    l("===============================")
+                                    exc_RAA.run_attack(attack_method="RI",K=k)
                                 
                                 if self.config.rima_included:
-                                    print("===============================")
-                                    exc_RAA.run_attack(method="RIMA",K=k)
+                                    l("===============================")
+                                    exc_RAA.run_attack(attack_method="RIMA",K=k)
 
     def prepare_save_path(self):
 
